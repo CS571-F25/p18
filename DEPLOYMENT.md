@@ -1,64 +1,37 @@
 # Deployment Guide for GitHub Pages
 
-## Quick Start
+## Quick Start (Following Official Instructions)
 
-1. **Push your code to GitHub**
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit - MadForum proof of concept"
-   git branch -M main
-   git remote add origin https://github.com/cs571-f25/p18.git
-   git push -u origin main
-   ```
+### Step 1: Build the Project
+```bash
+npm run build
+```
+This creates the `docs` folder with your production build.
 
-2. **Deploy to GitHub Pages**
-   ```bash
-   npm run deploy
-   ```
+### Step 2: Commit and Push to GitHub
+```bash
+git add -A
+git commit -m "Build for deployment"
+git push origin main
+```
 
-3. **Enable GitHub Pages in Repository Settings**
-   - Go to your GitHub repository: `https://github.com/cs571-f25/p18`
-   - Navigate to: Settings > Pages
-   - Under "Source", select: "Deploy from a branch"
-   - Branch: `gh-pages`
-   - Folder: `/ (root)`
-   - Click "Save"
+### Step 3: Configure GitHub Pages
+1. Go to your repository: `https://github.com/CS571-F25/p18`
+2. Navigate to: **Settings > Pages**
+3. Under "Source", select: **"Deploy from a branch"**
+4. Branch: **`main`**
+5. Folder: **`/docs`**
+6. Click **"Save"**
 
-4. **Wait for deployment**
-   - GitHub Pages will take a few minutes to build and deploy
-   - Your site will be available at: `https://cs571-f25.github.io/p18/`
+### Step 4: Wait and Verify
+- GitHub Pages will take 1-2 minutes to build and deploy
+- Your site will be available at: `https://cs571-f25.github.io/p18/`
 
-## Verify Deployment
+## Important Notes
 
-After deployment, visit: `https://cs571-f25.github.io/p18/`
-
-You should see:
-- MadForum header
-- Filter buttons (All, For Sale, Free, Bounty)
-- Search bar
-- Sample posts showing different types and statuses
-
-## Updating Your Site
-
-Whenever you make changes:
-1. Commit your changes:
-   ```bash
-   git add .
-   git commit -m "Your commit message"
-   git push
-   ```
-
-2. Redeploy:
-   ```bash
-   npm run deploy
-   ```
-
-## Troubleshooting
-
-- **404 Error**: Make sure the base path in `vite.config.ts` is set to `/p18/`
-- **Blank Page**: Check browser console for errors. Ensure all assets are loading correctly.
-- **Build Fails**: Run `npm install` again and check for TypeScript errors with `npm run build`
+- **Always run `npm run build` before pushing** to ensure your latest changes are in the `docs` folder
+- The `docs` folder is committed to the repository (not ignored)
+- Changes are deployed from the `main` branch, not a separate `gh-pages` branch
 
 ## Submission URL
 
@@ -67,3 +40,9 @@ Once deployed, your submission URL will be:
 https://cs571-f25.github.io/p18/
 ```
 
+## Troubleshooting
+
+- **404 Error**: Make sure the base path in `vite.config.ts` is set to `/p18/`
+- **Blank Page**: Check browser console for errors. Ensure all assets are loading correctly.
+- **Build Fails**: Run `npm install` again and check for TypeScript errors
+- **Changes not showing**: Make sure you ran `npm run build` and committed the `docs` folder
