@@ -1,18 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 
-interface Post {
-  id: number
-  title: string
-  type: 'sale' | 'free' | 'bounty'
-  price?: number
-  description: string
-  status: 'open' | 'claimed' | 'completed' | 'closed'
-  tags: string[]
-  location: string
-}
-
-const mockPosts: Post[] = [
+const mockPosts = [
   {
     id: 1,
     title: 'Office Chair - Like New',
@@ -55,7 +44,7 @@ const mockPosts: Post[] = [
 ]
 
 function App() {
-  const [filter, setFilter] = useState<'all' | 'sale' | 'free' | 'bounty'>('all')
+  const [filter, setFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
 
   const filteredPosts = mockPosts.filter(post => {
@@ -66,7 +55,7 @@ function App() {
     return matchesFilter && matchesSearch
   })
 
-  const getBadgeColor = (type: string) => {
+  const getBadgeColor = (type) => {
     switch (type) {
       case 'sale': return 'bg-blue-100 text-blue-800'
       case 'free': return 'bg-green-100 text-green-800'
@@ -75,7 +64,7 @@ function App() {
     }
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
       case 'open': return 'bg-green-100 text-green-800'
       case 'claimed': return 'bg-yellow-100 text-yellow-800'
