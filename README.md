@@ -1,110 +1,39 @@
 # MadForum - Campus Forum
 
-A lightweight campus forum for rehoming second-hand furniture and posting small paid "bounty" tasks.
+## Project Description
 
-## Project Overview
+MadForum is a lightweight campus forum focused on two use cases:
+(1) rehoming second-hand furniture and (2) posting small paid "bounty" tasks such as moving, assembly, or pickup. The app intentionally avoids online payments—people coordinate offline—so the backend remains simple and safe. The core interactive flows are: discovering items and tasks with rich filters, creating a post with photos and tags, and coordinating through threaded comments.
 
-MadForum is a proof-of-concept React application that demonstrates the core features of a campus forum system. This initial publish showcases:
+The feed supports quick filters (type: sale/free/bounty), price or reward range, tags, status (open/claimed/completed/closed), and text search. Each post page shows an image gallery, description, location text, badges (e.g., "Bounty", "Free"), and a comment thread where interested users can ask questions or express intent. Authors can edit, close, or soft-delete their own posts; admins can moderate comments. The status lifecycle is intentionally small– open -> claimed -> completed -> closed—and expired posts can auto-close.
 
-- **Post Feed**: Browse posts with filtering and search
-- **Post Types**: Filter by Sale, Free, or Bounty
-- **Status Tracking**: View post status (Open, Claimed, Completed, Closed)
-- **Tags & Location**: Posts include tags and location information
-
-## Tech Stack
-
-- **React 18** with TypeScript
-- **Vite** for build tooling
-- **Tailwind CSS** for styling
-- **GitHub Pages** for deployment
-
-## Development
-
-### Prerequisites
-
-- Node.js (v18 or higher)
-- npm or yarn
-
-### Setup
-
-1. Install dependencies:
-```bash
-npm install
-```
-
-2. Run development server:
-```bash
-npm run dev
-```
-
-3. Build for production:
-```bash
-npm run build
-```
-
-## Deployment to GitHub Pages
-
-This project is configured to deploy to GitHub Pages at `https://cs571-f25.github.io/p18/`
-
-### First Time Setup
-
-1. Make sure you have `gh-pages` installed:
-```bash
-npm install
-```
-
-2. Deploy to GitHub Pages:
-```bash
-npm run deploy
-```
-
-This will:
-- Build the project
-- Deploy to the `gh-pages` branch
-- Make your site available at `https://cs571-f25.github.io/p18/`
-
-### Updating Your Site
-
-After making changes, simply run:
-```bash
-npm run deploy
-```
-
-### GitHub Repository Settings
-
-Make sure your GitHub repository has GitHub Pages enabled:
-1. Go to Settings > Pages
-2. Source should be set to "Deploy from a branch"
-3. Branch should be `gh-pages` with `/ (root)` folder
-
-## Project Structure
-
-```
-p18/
-├── src/
-│   ├── App.tsx          # Main application component
-│   ├── App.css          # App-specific styles
-│   ├── main.tsx         # Entry point
-│   └── index.css        # Global styles with Tailwind
-├── index.html           # HTML template
-├── package.json         # Dependencies and scripts
-├── vite.config.ts       # Vite configuration (base path for GitHub Pages)
-├── tailwind.config.js   # Tailwind CSS configuration
-└── tsconfig.json        # TypeScript configuration
-```
+To keep the project feasible, we will build the backend with Supabase (Postgres + Auth + Storage) or a minimal Express + SQLite service. The schema includes four tables (users, posts, post_images, comments). The UI is built with React + TypeScript + Tailwind and emphasizes responsive design, inline validation, drag-and-drop photo upload, and live preview when posting. Stretch goals include watchlists, simple DMs, and map-style location picking. MadForum demonstrates meaningful interactivity, clear data modeling, and practical value for students while staying well within the course timeline.
 
 ## Group Members
 
-- Tianyi Chen (GitHub: Ricardo-ChenTY)
-- Jingwen Qian (GitHub: Kelsey-Qian)
+- **Tianyi Chen** (GitHub: [Ricardo-ChenTY](https://github.com/Ricardo-ChenTY))
+- **Jingwen Qian** (GitHub: [Kelsey-Qian](https://github.com/Kelsey-Qian))
 
-## Next Steps
+## Tech Stack
 
-This is a proof-of-concept. Future enhancements will include:
-- Backend integration (Supabase or Express + SQLite)
-- User authentication
-- Post creation and editing
-- Comment threads
-- Image uploads
-- Real-time updates
+- React 18 with TypeScript
+- Vite for build tooling
+- Tailwind CSS and Bootstrap for styling
+- GitHub Pages for deployment
 
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## Deployment
+
+The project is deployed at: [https://cs571-f25.github.io/p18/](https://cs571-f25.github.io/p18/)
