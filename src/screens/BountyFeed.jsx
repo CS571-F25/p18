@@ -24,17 +24,17 @@ export default function BountyFeed() {
       active: filter === 'all',
     },
     {
-      label: '悬赏',
+      label: 'Bounties',
       onClick: () => setFilter('bounty'),
       active: filter === 'bounty',
     },
     {
-      label: '二手',
+      label: 'Pre-owned',
       onClick: () => setFilter('resale'),
       active: filter === 'resale',
     },
     {
-      label: '活动（找搭子）',
+      label: 'Activity (Looking for partners)',
       onClick: () => setFilter('activity'),
       active: filter === 'activity',
     },
