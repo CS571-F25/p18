@@ -1,14 +1,16 @@
-// src/screens/NewBounty.jsx
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+// src/screens/EditBounty.jsx
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { usePostsStore, useAuth } from '../store'
 import { Card, Form, Button, Alert, Row, Col } from 'react-bootstrap'
 
-export default function NewBounty() {
+export default function EditBounty() {
   const { posts, setPosts } = usePostsStore()
   const { user } = useAuth()
+  const { id } = useParams()
   const navigate = useNavigate()
+  const post = posts.find((p) => String(p.id) === String(id))
 
   const [title, setTitle] = useState('')
   const [type, setType] = useState('bounty')
@@ -18,6 +20,48 @@ export default function NewBounty() {
   const [tagsInput, setTagsInput] = useState('')
   const [imageUrls, setImageUrls] = useState('')
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (post) {
+      setTitle(post.title || '')
+      setType(post.type || 'bounty')
+      setPrice(post.price !== undefined ? String(post.price) : '')
+      setDescription(post.description || '')
+      setLocation(post.location || '')
+      setTagsInput((post.tags || []).join(', '))
+      setImageUrls((post.images || []).join(', '))
+    }
+  }, [post])
+
+  if (!post || post.deleted) {
+    return (
+      <Layout
+        crumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'Post not found' },
+        ]}
+      >
+        <Alert variant="warning">Post not found or has been removed.</Alert>
+      </Layout>
+    )
+  }
+
+  // Check if user is the author
+  if (!user || user.id !== post.authorId) {
+    return (
+      <Layout
+        crumbs={[
+          { label: 'Home', path: '/' },
+          { label: 'Edit Post' },
+        ]}
+      >
+        <Alert variant="danger">
+          You don't have permission to edit this post. Only the post creator can
+          edit it.
+        </Alert>
+      </Layout>
+    )
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -36,7 +80,6 @@ export default function NewBounty() {
       }
     }
 
-    const nextId = posts.length ? Math.max(...posts.map((p) => p.id)) + 1 : 1
     const tags = tagsInput
       .split(',')
       .map((t) => t.trim())
@@ -46,47 +89,36 @@ export default function NewBounty() {
       .map((u) => u.trim())
       .filter(Boolean)
 
-    const newPost = {
-      id: nextId,
+    const updatedPost = {
+      ...post,
       title: title.trim(),
       type,
       price: price === '' ? undefined : Number(price),
       description: description.trim(),
-      status: 'open',
       tags,
       location: location.trim(),
       images,
-      comments: [],
-      authorId: user?.id || null,
-      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
 
-    setPosts([...posts, newPost])
-    navigate(`/bounties/${nextId}`)
+    const next = posts.map((p) => (p.id === post.id ? updatedPost : p))
+    setPosts(next)
+    navigate(`/bounties/${post.id}`)
   }
 
   return (
     <Layout
       crumbs={[
         { label: 'Home', path: '/' },
-        { label: 'New Bounty' },
+        { label: post.title, path: `/bounties/${post.id}` },
+        { label: 'Edit' },
       ]}
     >
       <Card className="max-w-3xl mx-auto">
         <Card.Body>
           <Card.Title as="h1" className="h2 mb-4">
-            Create a New Bounty
+            Edit Post
           </Card.Title>
-
-          {!user && (
-            <Alert variant="info" className="mb-4">
-              You need to{' '}
-              <Alert.Link onClick={() => navigate('/register')}>
-                register
-              </Alert.Link>{' '}
-              to create a post.
-            </Alert>
-          )}
 
           {error && (
             <Alert variant="danger" dismissible onClose={() => setError('')}>
@@ -96,9 +128,9 @@ export default function NewBounty() {
 
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
-              <Form.Label htmlFor="title-input">Title</Form.Label>
+              <Form.Label htmlFor="edit-title-input">Title</Form.Label>
               <Form.Control
-                id="title-input"
+                id="edit-title-input"
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -111,9 +143,9 @@ export default function NewBounty() {
             <Row className="mb-3">
               <Col md={4}>
                 <Form.Group>
-                  <Form.Label htmlFor="type-select">Type</Form.Label>
+                  <Form.Label htmlFor="edit-type-select">Type</Form.Label>
                   <Form.Select
-                    id="type-select"
+                    id="edit-type-select"
                     value={type}
                     onChange={(e) => setType(e.target.value)}
                     aria-label="Post type"
@@ -128,9 +160,9 @@ export default function NewBounty() {
 
               <Col md={4}>
                 <Form.Group>
-                  <Form.Label htmlFor="price-input">Reward / Price</Form.Label>
+                  <Form.Label htmlFor="edit-price-input">Reward / Price</Form.Label>
                   <Form.Control
-                    id="price-input"
+                    id="edit-price-input"
                     type="number"
                     min="0"
                     value={price}
@@ -147,9 +179,9 @@ export default function NewBounty() {
 
               <Col md={4}>
                 <Form.Group>
-                  <Form.Label htmlFor="location-input">Location</Form.Label>
+                  <Form.Label htmlFor="edit-location-input">Location</Form.Label>
                   <Form.Control
-                    id="location-input"
+                    id="edit-location-input"
                     type="text"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
@@ -161,9 +193,11 @@ export default function NewBounty() {
             </Row>
 
             <Form.Group className="mb-3">
-              <Form.Label htmlFor="description-textarea">Description</Form.Label>
+              <Form.Label htmlFor="edit-description-textarea">
+                Description
+              </Form.Label>
               <Form.Control
-                id="description-textarea"
+                id="edit-description-textarea"
                 as="textarea"
                 rows={4}
                 value={description}
@@ -175,9 +209,11 @@ export default function NewBounty() {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label htmlFor="tags-input">Tags (comma separated)</Form.Label>
+              <Form.Label htmlFor="edit-tags-input">
+                Tags (comma separated)
+              </Form.Label>
               <Form.Control
-                id="tags-input"
+                id="edit-tags-input"
                 type="text"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
@@ -187,11 +223,11 @@ export default function NewBounty() {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label htmlFor="images-input">
+              <Form.Label htmlFor="edit-images-input">
                 Image URLs (optional, comma separated)
               </Form.Label>
               <Form.Control
-                id="images-input"
+                id="edit-images-input"
                 type="text"
                 value={imageUrls}
                 onChange={(e) => setImageUrls(e.target.value)}
@@ -200,12 +236,22 @@ export default function NewBounty() {
               />
             </Form.Group>
 
-            <Button type="submit" variant="primary" disabled={!user}>
-              Publish Bounty
-            </Button>
+            <div className="d-flex gap-2">
+              <Button type="submit" variant="primary">
+                Save Changes
+              </Button>
+              <Button
+                type="button"
+                variant="outline-secondary"
+                onClick={() => navigate(`/bounties/${post.id}`)}
+              >
+                Cancel
+              </Button>
+            </div>
           </Form>
         </Card.Body>
       </Card>
     </Layout>
   )
 }
+

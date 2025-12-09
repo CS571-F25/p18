@@ -140,7 +140,10 @@ import {
     }, [user])
   
     const register = (name, email) => {
+      // Generate a unique user ID
+      const userId = Date.now().toString(36) + Math.random().toString(36).substr(2)
       setUser({
+        id: userId,
         name: name || 'Anonymous',
         email: email || '',
       })

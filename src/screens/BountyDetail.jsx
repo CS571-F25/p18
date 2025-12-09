@@ -2,19 +2,23 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Layout from '../components/Layout'
-import { usePostsStore } from '../store'
+import { usePostsStore, useAuth } from '../store'
 import ImageCarousel from '../components/ImageCarousel'
 import TypeBadge from '../components/TypeBadge'
 import StatusBadge from '../components/StatusBadge'
 import StatusButtons from '../components/StatusButtons'
 import CommentList from '../components/CommentList'
-import { Card, Badge, Alert } from 'react-bootstrap'
+import { Card, Badge, Alert, Button } from 'react-bootstrap'
 
 export default function BountyDetail() {
   const { posts, setPosts } = usePostsStore()
+  const { user } = useAuth()
   const { id } = useParams()
   const navigate = useNavigate()
   const post = posts.find((p) => String(p.id) === String(id))
+
+  // Check if current user is the author
+  const isAuthor = user && post && user.id === post.authorId
 
   const [comment, setComment] = useState('')
 
@@ -118,11 +122,34 @@ export default function BountyDetail() {
             <p className="text-muted small mb-4">{post.location}</p>
           )}
 
-          <StatusButtons
-            currentStatus={post.status}
-            onChange={changeStatus}
-            onDelete={softDelete}
-          />
+          {isAuthor && (
+            <div className="mb-3">
+              <Button
+                variant="outline-primary"
+                onClick={() => navigate(`/bounties/${post.id}/edit`)}
+                aria-label="Edit this post"
+              >
+                Edit Post
+              </Button>
+            </div>
+          )}
+
+          {isAuthor ? (
+            <StatusButtons
+              currentStatus={post.status}
+              onChange={changeStatus}
+              onDelete={softDelete}
+            />
+          ) : (
+            <div className="mb-4">
+              <div className="d-flex gap-2 align-items-center">
+                <StatusBadge status={post.status} />
+                <span className="text-muted small">
+                  Only the post creator can change the status
+                </span>
+              </div>
+            </div>
+          )}
 
           <CommentList
             comments={post.comments}

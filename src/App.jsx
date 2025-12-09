@@ -4,6 +4,7 @@ import { AuthProvider, PostsProvider } from './store'
 import BountyFeed from './screens/BountyFeed'
 import NewBounty from './screens/NewBounty'
 import BountyDetail from './screens/BountyDetail'
+import EditBounty from './screens/EditBounty'
 import MyBounties from './screens/MyBounties'
 import Register from './screens/Register'
 
@@ -17,8 +18,9 @@ export default function App() {
 
           {/* 悬赏相关 */}
           <Route path="/bounties/new" element={<NewBounty />} />
-          <Route path="/bounties/:id" element={<BountyDetail />} />
           <Route path="/bounties/mine" element={<MyBounties />} />
+          <Route path="/bounties/:id/edit" element={<EditBounty />} />
+          <Route path="/bounties/:id" element={<BountyDetail />} />
 
           {/* 注册 */}
           <Route path="/register" element={<Register />} />
