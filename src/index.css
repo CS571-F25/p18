@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Bootstrap is loaded via CDN in index.html */
+/* Additional custom styles */
 
 body {
   margin: 0;
@@ -11,3 +10,54 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Ensure minimum height for layout */
+.min-vh-100 {
+  min-height: 100vh;
+}
+
+/* Max width utility */
+.max-w-3xl {
+  max-width: 48rem;
+}
+
+.max-w-4xl {
+  max-width: 56rem;
+}
+
+.max-w-md {
+  max-width: 28rem;
+}
+
+/* Cursor pointer for clickable cards */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Hover effect for clickable tags */
+.cursor-pointer:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+  transition: all 0.2s ease;
+}
+
+/* Ensure proper color contrast for accessibility */
+.text-primary {
+  color: #0d6efd !important;
+}
+
+.text-muted {
+  color: #6c757d !important;
+}
+
+/* Ensure sufficient contrast for links and buttons */
+.btn-primary {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: #0b5ed7;
+  border-color: #0a58ca;
+  color: #ffffff;
+}

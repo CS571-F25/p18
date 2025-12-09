@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { useAuth } from '../store'
+import { Card, Form, Button } from 'react-bootstrap'
 
 export default function Register() {
   const { user, register } = useAuth()
@@ -24,46 +25,48 @@ export default function Register() {
         { label: 'Register' },
       ]}
     >
-      <div className="bg-white rounded-lg shadow-sm p-6 max-w-md">
-        <h1 className="text-2xl font-bold mb-4">Register</h1>
-        <p className="text-sm text-gray-600 mb-4">
-          Simple prototype registration. We only store a display name and
-          optional email in local storage so your posts feel more personal.
-        </p>
+      <Card className="max-w-md mx-auto">
+        <Card.Body>
+          <Card.Title as="h1" className="h2 mb-3">
+            Register
+          </Card.Title>
+          <Card.Text className="text-muted mb-4">
+            Simple prototype registration. We only store a display name and
+            optional email in local storage so your posts feel more personal.
+          </Card.Text>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
-            <input
-              className="w-full px-3 py-2 border rounded text-sm"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Alex"
-              required
-            />
-          </div>
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3">
+              <Form.Label htmlFor="name-input">Name</Form.Label>
+              <Form.Control
+                id="name-input"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Alex"
+                required
+                aria-required="true"
+              />
+            </Form.Group>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input
-              type="email"
-              className="w-full px-3 py-2 border rounded text-sm"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Optional, e.g. netid@wisc.edu"
-            />
-          </div>
+            <Form.Group className="mb-3">
+              <Form.Label htmlFor="email-input">Email</Form.Label>
+              <Form.Control
+                id="email-input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Optional, e.g. netid@wisc.edu"
+                aria-label="Email address (optional)"
+              />
+            </Form.Group>
 
-          <div className="pt-2">
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
-            >
+            <Button type="submit" variant="primary">
               Save
-            </button>
-          </div>
-        </form>
-      </div>
+            </Button>
+          </Form>
+        </Card.Body>
+      </Card>
     </Layout>
   )
 }
