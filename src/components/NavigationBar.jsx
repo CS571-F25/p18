@@ -7,14 +7,6 @@ export default function NavigationBar({ crumbs }) {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
 
-  const handleAuthClick = () => {
-    if (user) {
-      logout()
-    } else {
-      navigate('/register')
-    }
-  }
-
   return (
     <>
       <Navbar bg="light" expand="lg" className="shadow-sm">
@@ -47,18 +39,39 @@ export default function NavigationBar({ crumbs }) {
               >
                 New Post
               </Button>
-              <Button
-                variant="outline-secondary"
-                onClick={handleAuthClick}
-                aria-label={user ? 'Sign out' : 'Register or sign in'}
-              >
-                {user ? 'Sign out' : 'Register'}
-              </Button>
-              {user && (
-                <div className="text-end d-none d-md-block">
-                  <div className="small fw-medium">Hi, {user.name}</div>
-                  {user.email && <div className="small text-muted">{user.email}</div>}
-                </div>
+              {user ? (
+                <>
+                  <div className="text-end d-none d-md-block me-2">
+                    <div className="small fw-medium">Hi, {user.username}</div>
+                    {user.email && (
+                      <div className="small text-muted">{user.email}</div>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline-secondary"
+                    onClick={() => logout()}
+                    aria-label="Sign out"
+                  >
+                    Sign out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outline-primary"
+                    onClick={() => navigate('/login')}
+                    aria-label="Login"
+                  >
+                    Login
+                  </Button>
+                  <Button
+                    variant="outline-secondary"
+                    onClick={() => navigate('/register')}
+                    aria-label="Register"
+                  >
+                    Register
+                  </Button>
+                </>
               )}
             </Nav>
           </Navbar.Collapse>

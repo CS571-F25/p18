@@ -1,21 +1,75 @@
 // src/screens/Register.jsx
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { useAuth } from '../store'
-import { Card, Form, Button } from 'react-bootstrap'
+import { Card, Form, Button, Alert } from 'react-bootstrap'
 
 export default function Register() {
-  const { user, register } = useAuth()
+  const { register, isUsernameTaken } = useAuth()
   const navigate = useNavigate()
 
-  const [name, setName] = useState(user?.name || '')
-  const [email, setEmail] = useState(user?.email || '')
+  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
+  const [usernameError, setUsernameError] = useState('')
+
+  // Check username availability as user types
+  useEffect(() => {
+    if (username.trim().length > 0) {
+      if (isUsernameTaken(username)) {
+        setUsernameError('This username is already taken.')
+      } else {
+        setUsernameError('')
+      }
+    } else {
+      setUsernameError('')
+    }
+  }, [username, isUsernameTaken])
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    register(name.trim(), email.trim())
-    navigate('/')
+    setError('')
+
+    // Validation
+    if (!username.trim()) {
+      setError('Username is required.')
+      return
+    }
+
+    if (username.trim().length < 3) {
+      setError('Username must be at least 3 characters long.')
+      return
+    }
+
+    if (isUsernameTaken(username)) {
+      setError('This username is already taken. Please choose another.')
+      return
+    }
+
+    if (!password) {
+      setError('Password is required.')
+      return
+    }
+
+    if (password.length < 4) {
+      setError('Password must be at least 4 characters long.')
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
+
+    try {
+      register(username.trim(), email.trim(), password)
+      navigate('/')
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.')
+    }
   }
 
   return (
@@ -31,39 +85,114 @@ export default function Register() {
             Register
           </Card.Title>
           <Card.Text className="text-muted mb-4">
-            Simple prototype registration. We only store a display name and
-            optional email in local storage so your posts feel more personal.
+            Create an account to start posting bounties, items for sale, and
+            activities.
           </Card.Text>
+
+          {error && (
+            <Alert variant="danger" dismissible onClose={() => setError('')}>
+              {error}
+            </Alert>
+          )}
 
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
-              <Form.Label htmlFor="name-input">Name</Form.Label>
+              <Form.Label htmlFor="register-username-input">
+                Username <span className="text-danger">*</span>
+              </Form.Label>
               <Form.Control
-                id="name-input"
+                id="register-username-input"
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Alex"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Choose a unique username"
                 required
                 aria-required="true"
+                autoComplete="username"
+                isInvalid={!!usernameError}
               />
+              {usernameError && (
+                <Form.Control.Feedback type="invalid">
+                  {usernameError}
+                </Form.Control.Feedback>
+              )}
+              <Form.Text className="text-muted">
+                Username must be unique and at least 3 characters.
+              </Form.Text>
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label htmlFor="email-input">Email</Form.Label>
+              <Form.Label htmlFor="register-email-input">Email</Form.Label>
               <Form.Control
-                id="email-input"
+                id="register-email-input"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Optional, e.g. netid@wisc.edu"
                 aria-label="Email address (optional)"
+                autoComplete="email"
               />
             </Form.Group>
 
-            <Button type="submit" variant="primary">
-              Save
+            <Form.Group className="mb-3">
+              <Form.Label htmlFor="register-password-input">
+                Password <span className="text-danger">*</span>
+              </Form.Label>
+              <Form.Control
+                id="register-password-input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Create a password"
+                required
+                aria-required="true"
+                autoComplete="new-password"
+                minLength={4}
+              />
+              <Form.Text className="text-muted">
+                Password must be at least 4 characters long.
+              </Form.Text>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label htmlFor="register-confirm-password-input">
+                Confirm Password <span className="text-danger">*</span>
+              </Form.Label>
+              <Form.Control
+                id="register-confirm-password-input"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm your password"
+                required
+                aria-required="true"
+                autoComplete="new-password"
+                isInvalid={password !== confirmPassword && confirmPassword.length > 0}
+              />
+              {password !== confirmPassword && confirmPassword.length > 0 && (
+                <Form.Control.Feedback type="invalid">
+                  Passwords do not match.
+                </Form.Control.Feedback>
+              )}
+            </Form.Group>
+
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-100 mb-3"
+              disabled={!!usernameError}
+            >
+              Register
             </Button>
+
+            <div className="text-center">
+              <small className="text-muted">
+                Already have an account?{' '}
+                <Link to="/login" className="text-primary text-decoration-none">
+                  Login here
+                </Link>
+              </small>
+            </div>
           </Form>
         </Card.Body>
       </Card>

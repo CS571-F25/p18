@@ -117,42 +117,106 @@ import {
   const AuthContext = createContext(null)
   
   export function AuthProvider({ children }) {
-    const [user, setUser] = useState(() => {
+    // Store all registered users
+    const [users, setUsers] = useState(() => {
       try {
-        const saved = window.localStorage.getItem('madforum_user')
+        const saved = window.localStorage.getItem('madforum_users')
         if (saved) return JSON.parse(saved)
       } catch (e) {
-        console.warn('Failed to load user from localStorage', e)
+        console.warn('Failed to load users from localStorage', e)
+      }
+      return []
+    })
+  
+    // Current logged-in user
+    const [user, setUser] = useState(() => {
+      try {
+        const saved = window.localStorage.getItem('madforum_current_user')
+        if (saved) return JSON.parse(saved)
+      } catch (e) {
+        console.warn('Failed to load current user from localStorage', e)
       }
       return null
     })
   
+    // Save users to localStorage
+    useEffect(() => {
+      try {
+        window.localStorage.setItem('madforum_users', JSON.stringify(users))
+      } catch (e) {
+        console.warn('Failed to save users to localStorage', e)
+      }
+    }, [users])
+  
+    // Save current user to localStorage
     useEffect(() => {
       try {
         if (user) {
-          window.localStorage.setItem('madforum_user', JSON.stringify(user))
+          window.localStorage.setItem('madforum_current_user', JSON.stringify(user))
         } else {
-          window.localStorage.removeItem('madforum_user')
+          window.localStorage.removeItem('madforum_current_user')
         }
       } catch (e) {
-        console.warn('Failed to save user to localStorage', e)
+        console.warn('Failed to save current user to localStorage', e)
       }
     }, [user])
   
-    const register = (name, email) => {
+    const register = (username, email, password) => {
+      // Check if username already exists
+      const usernameExists = users.some(
+        (u) => u.username.toLowerCase() === username.trim().toLowerCase()
+      )
+      
+      if (usernameExists) {
+        throw new Error('Username already exists. Please choose a different username.')
+      }
+  
       // Generate a unique user ID
       const userId = Date.now().toString(36) + Math.random().toString(36).substr(2)
-      setUser({
+      const newUser = {
         id: userId,
-        name: name || 'Anonymous',
-        email: email || '',
-      })
+        username: username.trim(),
+        email: email.trim() || '',
+        password: password, // Note: In production, passwords should be hashed
+        createdAt: new Date().toISOString(),
+      }
+  
+      // Add to users list
+      setUsers([...users, newUser])
+      
+      // Automatically log in the new user
+      setUser(newUser)
+      
+      return newUser
+    }
+  
+    const login = (username, password) => {
+      const foundUser = users.find(
+        (u) =>
+          u.username.toLowerCase() === username.trim().toLowerCase() &&
+          u.password === password
+      )
+  
+      if (!foundUser) {
+        throw new Error('Invalid username or password.')
+      }
+  
+      setUser(foundUser)
+      return foundUser
     }
   
     const logout = () => setUser(null)
   
+    const isUsernameTaken = (username) => {
+      return users.some(
+        (u) => u.username.toLowerCase() === username.trim().toLowerCase()
+      )
+    }
+  
     return (
-      <AuthContext.Provider value={{ user, register, logout }}>
+      <AuthContext.Provider
+        value={{ user, users, register, login, logout, isUsernameTaken }}
+      >
         {children}
       </AuthContext.Provider>
     )

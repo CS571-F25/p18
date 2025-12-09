@@ -7,6 +7,7 @@ import BountyDetail from './screens/BountyDetail'
 import EditBounty from './screens/EditBounty'
 import MyBounties from './screens/MyBounties'
 import Register from './screens/Register'
+import Login from './screens/Login'
 
 export default function App() {
   return (
@@ -22,8 +23,9 @@ export default function App() {
           <Route path="/bounties/:id/edit" element={<EditBounty />} />
           <Route path="/bounties/:id" element={<BountyDetail />} />
 
-          {/* 注册 */}
+          {/* 认证 */}
           <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
         </Routes>
       </PostsProvider>
     </AuthProvider>
