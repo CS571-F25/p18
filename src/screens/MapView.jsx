@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
@@ -8,11 +8,19 @@ export default function MapView() {
   const { posts, isLoading } = usePostsStore()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
+  const [mapReady, setMapReady] = useState(false)
 
   const crumbs = [
     { label: 'Home', path: '/' },
     { label: 'Map' },
   ]
+
+  // Ensure map only renders on client side
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setMapReady(true)
+    }
+  }, [])
 
   if (isLoading) {
     return (
@@ -107,7 +115,7 @@ export default function MapView() {
           </div>
 
           <div className="h-[420px] rounded-lg overflow-hidden border border-gray-200">
-            {typeof window !== 'undefined' && (
+            {mapReady && typeof window !== 'undefined' ? (
               <MapContainer
                 center={center}
                 zoom={14}
@@ -152,6 +160,10 @@ export default function MapView() {
                   </Marker>
                 ))}
               </MapContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-500 text-sm">
+                Loading map...
+              </div>
             )}
           </div>
 
