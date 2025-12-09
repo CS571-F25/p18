@@ -1,5 +1,6 @@
 // src/components/CommentList.jsx
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Card, Form, Button, InputGroup, ButtonGroup } from 'react-bootstrap'
 
 export default function CommentList({
@@ -132,9 +133,9 @@ export default function CommentList({
       ) : (
         <div className="text-muted small text-center p-2 bg-light rounded">
           Please{' '}
-          <a href="/register" className="text-primary">
+          <Link to="/register" className="text-primary text-decoration-none">
             register
-          </a>{' '}
+          </Link>{' '}
           to post comments.
         </div>
       )}
