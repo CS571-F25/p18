@@ -39,7 +39,10 @@ class ErrorBoundary extends Component {
             <button
               onClick={() => {
                 this.setState({ hasError: false, error: null })
-                window.location.href = '/p18/'
+                // Use the current pathname to determine base path
+                const path = window.location.pathname
+                const base = path.startsWith('/p18') ? '/p18/' : '/'
+                window.location.href = base
               }}
               className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
             >
