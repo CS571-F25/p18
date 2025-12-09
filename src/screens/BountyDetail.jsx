@@ -36,20 +36,54 @@ export default function BountyDetail() {
   }
 
   const addComment = () => {
-    if (!comment.trim()) return
+    if (!comment.trim() || !user) return
     const next = posts.map((p) =>
       p.id === post.id
         ? {
             ...p,
             comments: [
               ...(p.comments || []),
-              { id: Date.now(), text: comment.trim() },
+              {
+                id: Date.now(),
+                text: comment.trim(),
+                authorId: user.id,
+                createdAt: new Date().toISOString(),
+              },
             ],
           }
         : p
     )
     setPosts(next)
     setComment('')
+  }
+
+  const editComment = (commentId, newText) => {
+    if (!newText.trim()) return
+    const next = posts.map((p) =>
+      p.id === post.id
+        ? {
+            ...p,
+            comments: (p.comments || []).map((c) =>
+              c.id === commentId
+                ? { ...c, text: newText.trim(), updatedAt: new Date().toISOString() }
+                : c
+            ),
+          }
+        : p
+    )
+    setPosts(next)
+  }
+
+  const deleteComment = (commentId) => {
+    const next = posts.map((p) =>
+      p.id === post.id
+        ? {
+            ...p,
+            comments: (p.comments || []).filter((c) => c.id !== commentId),
+          }
+        : p
+    )
+    setPosts(next)
   }
 
   const changeStatus = (nextStatus) => {
@@ -156,6 +190,9 @@ export default function BountyDetail() {
             onAddComment={addComment}
             comment={comment}
             setComment={setComment}
+            currentUserId={user?.id}
+            onEditComment={editComment}
+            onDeleteComment={deleteComment}
           />
         </Card.Body>
       </Card>
