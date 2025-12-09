@@ -15,10 +15,27 @@ export default function MapView() {
     { label: 'Map' },
   ]
 
-  // Ensure map only renders on client side
+  // Ensure map only renders on client side after DOM is ready
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.L) {
+      // Leaflet is available
       setMapReady(true)
+    } else if (typeof window !== 'undefined') {
+      // Wait for Leaflet to load
+      const checkLeaflet = setInterval(() => {
+        if (window.L) {
+          setMapReady(true)
+          clearInterval(checkLeaflet)
+        }
+      }, 100)
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        clearInterval(checkLeaflet)
+        if (!window.L) {
+          console.warn('Leaflet failed to load')
+        }
+      }, 5000)
+      return () => clearInterval(checkLeaflet)
     }
   }, [])
 
