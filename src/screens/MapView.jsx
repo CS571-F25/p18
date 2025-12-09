@@ -107,50 +107,52 @@ export default function MapView() {
           </div>
 
           <div className="h-[420px] rounded-lg overflow-hidden border border-gray-200">
-            <MapContainer
-              center={center}
-              zoom={14}
-              key={center.join(',')}
-              style={{ height: '100%', width: '100%' }}
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution="&copy; OpenStreetMap contributors"
-              />
-              {visible.map((post) => (
-                <Marker
-                  key={post.id}
-                  position={[post.lat, post.lng]}
-                >
-                  <Popup>
-                    <div className="text-xs space-y-1">
-                      <div className="font-semibold">
-                        {post.title}
+            {typeof window !== 'undefined' && (
+              <MapContainer
+                center={center}
+                zoom={14}
+                key={center.join(',')}
+                style={{ height: '100%', width: '100%' }}
+              >
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution="&copy; OpenStreetMap contributors"
+                />
+                {visible.map((post) => (
+                  <Marker
+                    key={post.id}
+                    position={[post.lat, post.lng]}
+                  >
+                    <Popup>
+                      <div className="text-xs space-y-1">
+                        <div className="font-semibold">
+                          {post.title}
+                        </div>
+                        <div className="text-gray-600">
+                          {post.location}
+                        </div>
+                        <div className="flex gap-2 mt-1">
+                          <button
+                            className="px-2 py-1 text-[11px] rounded bg-blue-600 text-white"
+                            onClick={() =>
+                              navigate(`/bounties/${post.id}`)
+                            }
+                          >
+                            View post
+                          </button>
+                          <button
+                            className="px-2 py-1 text-[11px] rounded bg-indigo-600 text-white"
+                            onClick={() => openMaps(post)}
+                          >
+                            Take me there
+                          </button>
+                        </div>
                       </div>
-                      <div className="text-gray-600">
-                        {post.location}
-                      </div>
-                      <div className="flex gap-2 mt-1">
-                        <button
-                          className="px-2 py-1 text-[11px] rounded bg-blue-600 text-white"
-                          onClick={() =>
-                            navigate(`/bounties/${post.id}`)
-                          }
-                        >
-                          View post
-                        </button>
-                        <button
-                          className="px-2 py-1 text-[11px] rounded bg-indigo-600 text-white"
-                          onClick={() => openMaps(post)}
-                        >
-                          Take me there
-                        </button>
-                      </div>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+            )}
           </div>
 
           {noPostsPinned && (

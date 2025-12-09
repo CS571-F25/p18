@@ -104,27 +104,43 @@ export function PostsProvider({ children }) {
           // Ensure lat/lng are numbers (they might be strings from localStorage)
           const normalized = parsed.map((post) => ({
             ...post,
-            lat: post.lat != null ? Number(post.lat) : null,
-            lng: post.lng != null ? Number(post.lng) : null,
+            lat: post.lat != null && !Number.isNaN(Number(post.lat)) ? Number(post.lat) : null,
+            lng: post.lng != null && !Number.isNaN(Number(post.lng)) ? Number(post.lng) : null,
           }))
-          setPosts(normalized)
+          // Only use stored posts if they're valid, otherwise use initial mock posts
+          if (normalized.length > 0) {
+            setPosts(normalized)
+          } else {
+            // If stored data is empty or invalid, use initial mock posts and save them
+            setPosts(initialMockPosts)
+            window.localStorage.setItem('madforum_posts', JSON.stringify(initialMockPosts))
+          }
         } else {
+          // First visit: use initial mock posts and save them
           setPosts(initialMockPosts)
+          window.localStorage.setItem('madforum_posts', JSON.stringify(initialMockPosts))
         }
       } catch (err) {
         console.warn('Failed to load posts from localStorage', err)
         setPosts(initialMockPosts)
+        // Try to save initial posts even if loading failed
+        try {
+          window.localStorage.setItem('madforum_posts', JSON.stringify(initialMockPosts))
+        } catch (saveErr) {
+          console.warn('Failed to save initial posts', saveErr)
+        }
       } finally {
         setIsLoading(false)
       }
-    }, 500)
+    }, 100) // Minimal delay for faster loading
 
     return () => clearTimeout(timer)
   }, [])
 
-  // 写回 localStorage
+  // 写回 localStorage (only save, don't modify posts here to avoid loops)
   useEffect(() => {
     if (isLoading) return
+    if (posts.length === 0) return // Don't save empty array
     try {
       window.localStorage.setItem('madforum_posts', JSON.stringify(posts))
     } catch (err) {
