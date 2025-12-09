@@ -16,9 +16,9 @@ To keep the project feasible, we will build the backend with Supabase (Postgres 
 
 ## Tech Stack
 
-- React 18
+- React 18 with TypeScript
 - Vite for build tooling
-- **Tailwind CSS** - Primary design library used consistently throughout the application
+- Tailwind CSS and Bootstrap for styling
 - GitHub Pages for deployment
 
 ## Development
@@ -38,4 +38,4 @@ npm run build
 
 ## Deployment
 
-The project is deployed at: [https://cs571-f25.github.io/p18/](https://cs571-f25.github.io/p18/)
+The project is deployed at: [https://cs571-f25.github.io/p18/]( https://cs571-f25.github.io/p18/)
