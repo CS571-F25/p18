@@ -18,31 +18,40 @@ class ErrorBoundary extends Component {
   }
 
   static getDerivedStateFromError(error) {
+    // Log the error for debugging
+    console.error('ErrorBoundary caught error:', error)
     return { hasError: true, error }
   }
 
   componentDidCatch(error, errorInfo) {
     console.error('App error:', error, errorInfo)
+    // Log component stack for debugging
+    console.error('Component stack:', errorInfo.componentStack)
   }
 
   render() {
     if (this.state.hasError) {
+      const errorMessage = this.state.error?.message || 'An unexpected error occurred'
+      const isReactError = errorMessage.includes('Minified React error')
+      
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center p-6">
+          <div className="text-center p-6 max-w-md">
             <h1 className="text-xl font-semibold text-gray-900 mb-2">
               Something went wrong
             </h1>
-            <p className="text-sm text-gray-600 mb-4">
-              {this.state.error?.message || 'An unexpected error occurred'}
+            <p className="text-sm text-gray-600 mb-2">
+              {errorMessage}
             </p>
+            {isReactError && (
+              <p className="text-xs text-gray-500 mb-4">
+                This is usually a routing issue. Try navigating from the home page.
+              </p>
+            )}
             <button
               onClick={() => {
                 this.setState({ hasError: false, error: null })
-                // Use the current pathname to determine base path
-                const path = window.location.pathname
-                const base = path.startsWith('/p18') ? '/p18/' : '/'
-                window.location.href = base
+                window.location.href = '/p18/'
               }}
               className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
             >

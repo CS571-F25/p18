@@ -15,28 +15,11 @@ export default function MapView() {
     { label: 'Map' },
   ]
 
-  // Ensure map only renders on client side after DOM is ready
+  // Ensure map only renders on client side
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.L) {
-      // Leaflet is available
-      setMapReady(true)
-    } else if (typeof window !== 'undefined') {
-      // Wait for Leaflet to load
-      const checkLeaflet = setInterval(() => {
-        if (window.L) {
-          setMapReady(true)
-          clearInterval(checkLeaflet)
-        }
-      }, 100)
-      // Timeout after 5 seconds
-      setTimeout(() => {
-        clearInterval(checkLeaflet)
-        if (!window.L) {
-          console.warn('Leaflet failed to load')
-        }
-      }, 5000)
-      return () => clearInterval(checkLeaflet)
-    }
+    if (typeof window === 'undefined') return
+    // Set map ready immediately - Leaflet is loaded via import
+    setMapReady(true)
   }, [])
 
   if (isLoading) {
@@ -132,7 +115,7 @@ export default function MapView() {
           </div>
 
           <div className="h-[420px] rounded-lg overflow-hidden border border-gray-200">
-            {mapReady && typeof window !== 'undefined' ? (
+            {mapReady ? (
               <MapContainer
                 center={center}
                 zoom={14}
