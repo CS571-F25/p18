@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Bootstrap is loaded via CDN in index.html */
 /* Additional custom styles */
 
