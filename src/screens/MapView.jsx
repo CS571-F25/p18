@@ -5,7 +5,7 @@ import Layout from '../components/Layout'
 import { usePostsStore } from '../store'
 
 export default function MapView() {
-  const { posts } = usePostsStore()
+  const { posts, isLoading } = usePostsStore()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
 
@@ -13,6 +13,14 @@ export default function MapView() {
     { label: 'Home', path: '/' },
     { label: 'Map' },
   ]
+
+  if (isLoading) {
+    return (
+      <Layout crumbs={crumbs}>
+        <p className="text-gray-600 text-sm">Loading posts…</p>
+      </Layout>
+    )
+  }
 
   // 只取有坐标的帖子
   const postsWithCoords = useMemo(
@@ -162,7 +170,7 @@ export default function MapView() {
         {/* 右侧：列表 */}
         <div className="bg-white rounded-xl shadow-sm p-4">
           <h2 className="text-sm font-semibold mb-2">
-            Posts on map
+            Posts on map ({visible.length})
           </h2>
           {visible.length === 0 ? (
             <p className="text-xs text-gray-600">
@@ -180,10 +188,10 @@ export default function MapView() {
                   <div className="font-semibold text-gray-900">
                     {post.title}
                   </div>
-                  <div className="text-gray-500">
+                  <div className="text-gray-600">
                     {post.location}
                   </div>
-                  <div className="text-gray-500 flex flex-wrap gap-1">
+                  <div className="text-gray-600 flex flex-wrap gap-1">
                     {(post.tags || [])
                       .slice(0, 3)
                       .map((t) => (
