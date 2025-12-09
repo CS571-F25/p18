@@ -16,9 +16,9 @@ To keep the project feasible, we will build the backend with Supabase (Postgres 
 
 ## Tech Stack
 
-- React 18 with TypeScript
+- React 18
 - Vite for build tooling
-- Tailwind CSS and Bootstrap for styling
+- **Tailwind CSS** - Primary design library used consistently throughout the application
 - GitHub Pages for deployment
 
 ## Development

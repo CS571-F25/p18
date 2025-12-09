@@ -142,7 +142,7 @@ export default function MyBounties() {
               {post.description}
             </p>
 
-            <div className="mt-auto text-xs text-gray-500">
+            <div className="mt-auto text-xs text-gray-600">
               {post.location}
             </div>
           </div>
@@ -150,7 +150,7 @@ export default function MyBounties() {
       </div>
 
       {currentList.length === 0 && (
-        <div className="text-center py-10 text-gray-500 text-sm">
+        <div className="text-center py-10 text-gray-600 text-sm">
           {tab === 'posted' && (
             <p>You haven&apos;t posted anything yet.</p>
           )}

@@ -94,13 +94,20 @@ export function PostsProvider({ children }) {
   const [posts, setPosts] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // 模拟“小后端”：从 localStorage 读取
+  // 模拟"小后端"：从 localStorage 读取
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
         const stored = window.localStorage.getItem('madforum_posts')
         if (stored) {
-          setPosts(JSON.parse(stored))
+          const parsed = JSON.parse(stored)
+          // Ensure lat/lng are numbers (they might be strings from localStorage)
+          const normalized = parsed.map((post) => ({
+            ...post,
+            lat: post.lat != null ? Number(post.lat) : null,
+            lng: post.lng != null ? Number(post.lng) : null,
+          }))
+          setPosts(normalized)
         } else {
           setPosts(initialMockPosts)
         }
@@ -193,6 +200,66 @@ export function PostsProvider({ children }) {
     }))
   }
 
+  const updateComment = (id, commentId, text, user) => {
+    const content = (text || '').trim()
+    if (!content) return false
+    if (!user?.email) return false
+    let updated = false
+
+    updatePost(id, (post) => {
+      const comments = post.comments || []
+      const nextComments = comments.map((c) => {
+        if (c.id !== commentId) return c
+        const isOwner = c.authorEmail && c.authorEmail === user.email
+        if (!isOwner) return c
+        updated = true
+        return { ...c, text: content, editedAt: new Date().toISOString() }
+      })
+      return { ...post, comments: nextComments }
+    })
+
+    return updated
+  }
+
+  const deletePost = (id, user) => {
+    if (!user?.email) return false
+    let removed = false
+    setPosts((prev) => {
+      const next = prev.filter((p) => {
+        if (p.id !== id) return true
+        const isOwner = p.ownerEmail && p.ownerEmail === user.email
+        if (!isOwner) return true
+        removed = true
+        return false
+      })
+      return next
+    })
+    return removed
+  }
+
+  // Update editable post fields with ownership check
+  const updatePostFields = (id, data, user) => {
+    let updated = false
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id !== id) return p
+
+        // Only the creator (ownerEmail) can edit
+        const isOwner =
+          user && p.ownerEmail && p.ownerEmail === user.email
+        if (!isOwner) return p
+
+        updated = true
+        return {
+          ...p,
+          ...data,
+          updatedAt: Date.now(),
+        }
+      })
+    )
+    return updated
+  }
+
   return (
     <PostsContext.Provider
       value={{
@@ -202,6 +269,9 @@ export function PostsProvider({ children }) {
         changeStatus,
         toggleWatchlist,
         addComment,
+        updateComment,
+        updatePostFields,
+        deletePost,
       }}
     >
       {children}
@@ -228,6 +298,16 @@ export function AuthProvider({ children }) {
     }
   })
 
+  const [users, setUsers] = useState(() => {
+    try {
+      const stored = window.localStorage.getItem('madforum_users')
+      return stored ? JSON.parse(stored) : []
+    } catch {
+      return []
+    }
+  })
+
+  // Persist current user
   useEffect(() => {
     try {
       if (user) {
@@ -240,11 +320,61 @@ export function AuthProvider({ children }) {
     }
   }, [user])
 
-  const register = (name, email) => {
-    setUser({
-      name: name || 'Anonymous',
-      email: email || '',
-    })
+  // Persist user list
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('madforum_users', JSON.stringify(users))
+    } catch (err) {
+      console.warn('Failed to store users', err)
+    }
+  }, [users])
+
+  const register = (username, email, password) => {
+    const uname = (username || '').trim()
+    const emailNorm = (email || '').trim().toLowerCase()
+    const pwd = (password || '').trim()
+
+    if (!uname || !emailNorm || !pwd) {
+      return { ok: false, error: 'All fields are required.' }
+    }
+
+    const existsUsername = users.some(
+      (u) => u.username.toLowerCase() === uname.toLowerCase()
+    )
+    if (existsUsername) {
+      return { ok: false, error: 'Username already taken.' }
+    }
+
+    const existsEmail = users.some((u) => u.email === emailNorm)
+    if (existsEmail) {
+      return { ok: false, error: 'Email already registered.' }
+    }
+
+    const newUser = { username: uname, email: emailNorm, password: pwd }
+    setUsers((prev) => [...prev, newUser])
+    setUser({ name: uname, email: emailNorm })
+    return { ok: true }
+  }
+
+  const login = (identifier, password) => {
+    const idNorm = (identifier || '').trim().toLowerCase()
+    const pwd = (password || '').trim()
+    if (!idNorm || !pwd) {
+      return { ok: false, error: 'Email/username and password are required.' }
+    }
+    const found = users.find(
+      (u) =>
+        u.email === idNorm ||
+        u.username.toLowerCase() === idNorm
+    )
+    if (!found) {
+      return { ok: false, error: 'Account not found.' }
+    }
+    if (found.password !== pwd) {
+      return { ok: false, error: 'Incorrect password.' }
+    }
+    setUser({ name: found.username, email: found.email })
+    return { ok: true }
   }
 
   const logout = () => {
@@ -252,7 +382,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, register, logout }}>
+    <AuthContext.Provider value={{ user, register, login, logout, users }}>
       {children}
     </AuthContext.Provider>
   )

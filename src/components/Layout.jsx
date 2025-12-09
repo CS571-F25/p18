@@ -6,12 +6,11 @@ export default function Layout({ crumbs = [], children }) {
   const { user, logout } = useAuth()
   const { toasts } = useToast()
 
-  const handleAuthClick = () => {
-    if (user) {
-      logout()
-    } else {
-      navigate('/register')
-    }
+  const handleLogout = () => logout()
+  const goHome = () => {
+    // Broadcast a home navigation event so pages can reset filters
+    window.dispatchEvent(new Event('madforum-home'))
+    navigate('/')
   }
 
   return (
@@ -35,7 +34,7 @@ export default function Layout({ crumbs = [], children }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
           <div
             className="cursor-pointer"
-            onClick={() => navigate('/')}
+            onClick={goHome}
           >
             <h1 className="text-2xl font-bold text-gray-900">
               MadForum
@@ -60,18 +59,34 @@ export default function Layout({ crumbs = [], children }) {
               My Bounties
             </button>
 
-            <button
-              onClick={handleAuthClick}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-xs text-gray-700 hover:bg-gray-50"
-            >
-              {user ? 'Sign out' : 'Register'}
-            </button>
-
-            {user && (
-              <div className="hidden sm:block text-right text-xs text-gray-600">
-                <div className="font-medium">Hi, {user.name}</div>
-                {user.email && <div>{user.email}</div>}
-              </div>
+            {user ? (
+              <>
+                <div className="hidden sm:block text-right text-xs text-gray-600">
+                  <div className="font-medium">Hi, {user.name}</div>
+                  {user.email && <div>{user.email}</div>}
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-2 border border-gray-200 rounded-lg text-xs text-gray-700 hover:bg-gray-50"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => navigate('/login')}
+                  className="px-3 py-2 border border-gray-200 rounded-lg text-xs text-gray-700 hover:bg-gray-50"
+                >
+                  Log in
+                </button>
+                <button
+                  onClick={() => navigate('/register')}
+                  className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"
+                >
+                  Register
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -79,7 +94,7 @@ export default function Layout({ crumbs = [], children }) {
         {/* 顶部 breadcrumb / nav */}
         <div className="border-t border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-            <nav className="text-xs text-gray-500 flex gap-4 overflow-x-auto">
+            <nav className="text-xs text-gray-600 flex gap-4 overflow-x-auto">
               {crumbs.map((crumb, index) => {
                 const { label, path, onClick, active } = crumb
                 const handleClick = () => {
@@ -92,7 +107,7 @@ export default function Layout({ crumbs = [], children }) {
                   'border-b-2',
                   active
                     ? 'border-blue-600 text-gray-900 font-semibold'
-                    : 'border-transparent text-gray-500 hover:text-blue-700 hover:border-blue-300',
+                    : 'border-transparent text-gray-600 hover:text-blue-700 hover:border-blue-300',
                 ].join(' ')
 
                 if (path || onClick) {
@@ -128,7 +143,7 @@ export default function Layout({ crumbs = [], children }) {
 
       <footer className="bg-white border-t mt-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <p className="text-center text-gray-500 text-xs">
+          <p className="text-center text-gray-600 text-xs">
             MadForum — CS571 Campus Forum Prototype
           </p>
         </div>

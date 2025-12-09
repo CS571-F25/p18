@@ -48,16 +48,22 @@ export default function NewBounty() {
         .map((t) => t.trim())
         .filter(Boolean) || []
 
-    const latNum = lat.trim() ? Number(lat) : null
-    const lngNum = lng.trim() ? Number(lng) : null
+    let latNum = null
+    let lngNum = null
 
-    if (lat.trim() && Number.isNaN(latNum)) {
-      showToast('Latitude must be a number.', 'error')
-      return
+    if (lat.trim()) {
+      latNum = Number(lat)
+      if (Number.isNaN(latNum)) {
+        showToast('Latitude must be a number.', 'error')
+        return
+      }
     }
-    if (lng.trim() && Number.isNaN(lngNum)) {
-      showToast('Longitude must be a number.', 'error')
-      return
+    if (lng.trim()) {
+      lngNum = Number(lng)
+      if (Number.isNaN(lngNum)) {
+        showToast('Longitude must be a number.', 'error')
+        return
+      }
     }
 
     const payload = {
@@ -158,7 +164,7 @@ export default function NewBounty() {
               onChange={(e) => setLocation(e.target.value)}
               placeholder="e.g. Lucky, The James, Lakeshore Dorms"
             />
-            <p className="mt-1 text-[11px] text-gray-500">
+            <p className="mt-1 text-[11px] text-gray-600">
               This name will appear on the card and in map search.
             </p>
           </div>
@@ -188,7 +194,7 @@ export default function NewBounty() {
               />
             </div>
           </div>
-          <p className="text-[11px] text-gray-500">
+          <p className="text-[11px] text-gray-600">
             If you fill latitude and longitude, this post will appear as a
             pin on the map and can be sorted by distance. You can copy
             coordinates from Google Maps.
@@ -205,7 +211,7 @@ export default function NewBounty() {
               onChange={(e) => setTagsInput(e.target.value)}
               placeholder='e.g. furniture, moving, "Lakeshore Dorms"'
             />
-            <p className="mt-1 text-[11px] text-gray-500">
+            <p className="mt-1 text-[11px] text-gray-600">
               If you add a tag for the location, please type the place name
               exactly as it appears on the map（和地图上的地名保持一致）.
             </p>

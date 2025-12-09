@@ -16,12 +16,18 @@ export default function MapView() {
 
   // 只取有坐标的帖子
   const postsWithCoords = useMemo(
-    () =>
-      posts.filter(
+    () => {
+      const filtered = posts.filter(
         (p) =>
+          p.lat != null &&
+          p.lng != null &&
           typeof p.lat === 'number' &&
-          typeof p.lng === 'number'
-      ),
+          typeof p.lng === 'number' &&
+          !Number.isNaN(p.lat) &&
+          !Number.isNaN(p.lng)
+      )
+      return filtered
+    },
     [posts]
   )
 
@@ -75,7 +81,7 @@ export default function MapView() {
             <h1 className="text-sm font-semibold">
               Map view
             </h1>
-            <div className="text-[11px] text-gray-500">
+            <div className="text-[11px] text-gray-600">
               Pins are posts with latitude & longitude.
             </div>
           </div>
@@ -87,7 +93,7 @@ export default function MapView() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <p className="mt-1 text-[11px] text-gray-500">
+            <p className="mt-1 text-[11px] text-gray-600">
               Example: &quot;Lakeshore&quot;, &quot;Lucky&quot;, &quot;desk&quot;.
             </p>
           </div>
@@ -113,7 +119,7 @@ export default function MapView() {
                       <div className="font-semibold">
                         {post.title}
                       </div>
-                      <div className="text-gray-500">
+                      <div className="text-gray-600">
                         {post.location}
                       </div>
                       <div className="flex gap-2 mt-1">
@@ -140,14 +146,14 @@ export default function MapView() {
           </div>
 
           {noPostsPinned && (
-            <p className="mt-2 text-[11px] text-gray-500">
+            <p className="mt-2 text-[11px] text-gray-600">
               No posts have pinned locations yet. Create a post with
               latitude and longitude to see it on the map.
             </p>
           )}
 
           {noSearchResults && !noPostsPinned && (
-            <p className="mt-2 text-[11px] text-gray-500">
+            <p className="mt-2 text-[11px] text-gray-600">
               No posts found for this place name.
             </p>
           )}
@@ -159,7 +165,7 @@ export default function MapView() {
             Posts on map
           </h2>
           {visible.length === 0 ? (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-600">
               {noPostsPinned
                 ? 'No posts with coordinates yet.'
                 : 'No posts match your search.'}
@@ -177,11 +183,19 @@ export default function MapView() {
                   <div className="text-gray-500">
                     {post.location}
                   </div>
-                  <div className="text-gray-500">
+                  <div className="text-gray-500 flex flex-wrap gap-1">
                     {(post.tags || [])
                       .slice(0, 3)
-                      .map((t) => `#${t}`)
-                      .join(' ')}
+                      .map((t) => (
+                        <button
+                          key={t}
+                          onClick={() => navigate(`/?tag=${encodeURIComponent(t.toLowerCase())}`)}
+                          className="hover:underline cursor-pointer"
+                          title="Click to see all posts with this tag"
+                        >
+                          #{t}
+                        </button>
+                      ))}
                   </div>
                   <div className="mt-1 flex gap-2">
                     <button

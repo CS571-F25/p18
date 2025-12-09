@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import Layout from '../components/Layout'
 import {
   usePostsStore,
@@ -52,18 +52,36 @@ function typeLabel(type) {
 
 export default function BountyFeed() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
   const { posts, toggleWatchlist } = usePostsStore()
   const { user } = useAuth()
   const { showToast } = useToast()
 
   const [search, setSearch] = useState('')
-  const [tagsInput, setTagsInput] = useState('')
+  const [tagsInput, setTagsInput] = useState(() => {
+    // Initialize from URL search params if present
+    const tagParam = searchParams.get('tag')
+    return tagParam || ''
+  })
   const [typeFilter, setTypeFilter] = useState('all') // all | bounty | secondhand | activity
   const [sortMode, setSortMode] = useState('newest') // newest | distance | relevance
   const [userLocation, setUserLocation] = useState(null)
 
+  const resetFilters = () => {
+    setSearch('')
+    setTagsInput('')
+    setTypeFilter('all')
+    setSortMode('newest')
+    setSearchParams({})
+  }
+
   const crumbs = [
-    { label: 'Home', path: '/' },
+    {
+      label: 'Home',
+      path: '/',
+      onClick: () => resetFilters(),
+    },
     {
       label: 'Bounties',
       onClick: () => setTypeFilter('bounty'),
@@ -81,6 +99,31 @@ export default function BountyFeed() {
     },
     { label: 'Map', path: '/map' },
   ]
+
+  // Sync tagsInput with URL search params when navigating from other pages
+  useEffect(() => {
+    const tagParam = searchParams.get('tag')
+    if (tagParam) {
+      setTagsInput(tagParam)
+    } else {
+      // If no tag in URL, reset tag filter (e.g., when going Home)
+      setTagsInput('')
+    }
+  }, [searchParams])
+
+  // Reset category filter when returning Home
+  useEffect(() => {
+    if (location.pathname === '/') {
+      resetFilters()
+    }
+  }, [location.pathname])
+
+  // Reset filters when header "home" is clicked (broadcast event)
+  useEffect(() => {
+    const handler = () => resetFilters()
+    window.addEventListener('madforum-home', handler)
+    return () => window.removeEventListener('madforum-home', handler)
+  }, [])
 
   // 浏览器定位
   useEffect(() => {
@@ -175,6 +218,34 @@ export default function BountyFeed() {
     }
     toggleWatchlist(post.id, user)
     showToast('Updated watchlist.', 'success')
+  }
+
+  const handleTagClick = (tag) => {
+    const currentTags = tagsInput
+      .split(',')
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean)
+    const tagLower = tag.toLowerCase()
+    
+    if (currentTags.includes(tagLower)) {
+      // Remove tag if already in filter
+      const newTags = currentTags.filter((t) => t !== tagLower)
+      const newTagsInput = newTags.join(', ')
+      setTagsInput(newTagsInput)
+      // Update URL - remove tag param if no tags left, otherwise use first tag
+      if (newTags.length === 0) {
+        setSearchParams({})
+      } else {
+        setSearchParams({ tag: newTags[0] })
+      }
+    } else {
+      // Add tag to filter
+      const newTags = [...currentTags, tagLower]
+      const newTagsInput = newTags.join(', ')
+      setTagsInput(newTagsInput)
+      // Update URL search params with the clicked tag
+      setSearchParams({ tag: tagLower })
+    }
   }
 
   return (
@@ -291,16 +362,21 @@ export default function BountyFeed() {
 
                 <div className="flex flex-wrap gap-1 mb-2">
                   {(post.tags || []).map((tag) => (
-                    <span
+                    <button
                       key={tag}
-                      className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-600"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handleTagClick(tag)
+                      }}
+                      className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-600 hover:bg-gray-200 cursor-pointer transition-colors"
+                      title="Click to filter by this tag"
                     >
                       #{tag}
-                    </span>
+                    </button>
                   ))}
                 </div>
 
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-600">
                   {post.location}
                 </div>
               </div>
@@ -310,7 +386,7 @@ export default function BountyFeed() {
                   onClick={() => onToggleWatch(post)}
                   className={`text-xs px-2 py-1 rounded-md border ${
                     isWatched
-                      ? 'border-blue-600 text-blue-600 bg-blue-50'
+                      ? 'border-red-500 text-red-600 bg-red-50'
                       : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`}
                 >
@@ -330,7 +406,7 @@ export default function BountyFeed() {
       </div>
 
       {filteredPosts.length === 0 && (
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <p className="mt-6 text-center text-sm text-gray-600">
           No posts match your filters yet.
         </p>
       )}

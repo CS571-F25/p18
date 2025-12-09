@@ -1,59 +1,44 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { useAuth, useToast } from '../store'
 
 const inputClass =
   'w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
 
-export default function Register() {
-  const { register } = useAuth()
+export default function Login() {
+  const { login } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
+  const location = useLocation()
+  const redirect = location.state?.from || '/'
 
-  const [username, setUsername] = useState('')
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState({})
 
   const crumbs = [
     { label: 'Home', path: '/' },
-    { label: 'Register' },
+    { label: 'Login' },
   ]
 
   const handleSubmit = (e) => {
     e.preventDefault()
     const newErrors = {}
-
-    if (!username.trim()) newErrors.username = 'Username is required.'
-    if (!email.trim()) {
-      newErrors.email = 'Email is required.'
-    } else if (!email.includes('@')) {
-      newErrors.email = 'Please enter a valid email.'
-    }
-    if (!password.trim()) {
-      newErrors.password = 'Password is required.'
-    } else if (password.trim().length < 6) {
-      newErrors.password = 'Password must be at least 6 characters.'
-    }
-
+    if (!identifier.trim()) newErrors.identifier = 'Email or username required.'
+    if (!password.trim()) newErrors.password = 'Password required.'
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
       return
     }
 
-    const result = register(
-      username.trim(),
-      email.trim(),
-      password.trim()
-    )
+    const result = login(identifier.trim(), password.trim())
     if (!result.ok) {
-      showToast(result.error || 'Registration failed', 'error')
+      showToast(result.error || 'Login failed', 'error')
       return
     }
-
-    showToast('Registered successfully!', 'success')
-    navigate('/')
+    showToast('Logged in!', 'success')
+    navigate(redirect)
   }
 
   const errorText = (msg) =>
@@ -66,43 +51,21 @@ export default function Register() {
   return (
     <Layout crumbs={crumbs}>
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold mb-4">
-          Register
-        </h2>
-        <p className="text-xs text-gray-600 mb-4">
-          Choose a unique username and set a password to log in.
-        </p>
-
+        <h2 className="text-xl font-semibold mb-4">Login</h2>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              Username
+              Email or Username
             </label>
             <input
               className={`${inputClass} ${
-                errors.username ? 'border-red-500' : ''
+                errors.identifier ? 'border-red-500' : ''
               }`}
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Unique username"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="name@wisc.edu or username"
             />
-            {errorText(errors.username)}
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Email
-            </label>
-            <input
-              className={`${inputClass} ${
-                errors.email ? 'border-red-500' : ''
-              }`}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              type="email"
-              placeholder="name@wisc.edu"
-            />
-            {errorText(errors.email)}
+            {errorText(errors.identifier)}
           </div>
 
           <div>
@@ -116,7 +79,7 @@ export default function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type="password"
-              placeholder="At least 6 characters"
+              placeholder="Your password"
             />
             {errorText(errors.password)}
           </div>
@@ -124,16 +87,16 @@ export default function Register() {
           <div className="pt-2 flex justify-end gap-2">
             <button
               type="button"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/register')}
               className="px-3 py-2 text-xs border rounded text-gray-600 hover:bg-gray-50"
             >
-              Have an account? Log in
+              Create account
             </button>
             <button
               type="submit"
               className="px-4 py-2 text-xs font-semibold bg-blue-600 text-white rounded hover:bg-blue-700"
             >
-              Register
+              Log in
             </button>
           </div>
         </form>
@@ -141,3 +104,4 @@ export default function Register() {
     </Layout>
   )
 }
+

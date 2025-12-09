@@ -12,13 +12,23 @@ import {
 export default function BountyDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { posts, isLoading, changeStatus, toggleWatchlist, addComment } =
+  const {
+    posts,
+    isLoading,
+    changeStatus,
+    toggleWatchlist,
+    addComment,
+    updateComment,
+    deletePost,
+  } =
     usePostsStore()
   const { user } = useAuth()
   const { showToast } = useToast()
 
   const post = posts.find((p) => String(p.id) === String(id))
   const [commentText, setCommentText] = useState('')
+  const [editCommentId, setEditCommentId] = useState(null)
+  const [editCommentText, setEditCommentText] = useState('')
 
   const crumbs = [
     { label: 'Home', path: '/' },
@@ -32,6 +42,17 @@ export default function BountyDetail() {
         <p className="text-gray-500 text-sm">Loading post…</p>
       </Layout>
     )
+  }
+
+  const handleDelete = () => {
+    if (!isOwner) return
+    const ok = deletePost(post.id, user)
+    if (!ok) {
+      showToast('Only the owner can delete this post.', 'error')
+      return
+    }
+    showToast('Post deleted.')
+    navigate('/')
   }
 
   if (!post) {
@@ -82,6 +103,18 @@ export default function BountyDetail() {
     showToast('Post closed.')
   }
 
+  const handleStatusChange = (e) => {
+    if (!isOwner) return
+    const newStatus = e.target.value
+    if (newStatus === post.status) return
+    
+    // Only allow changing between open, claimed, and closed
+    if (!['open', 'claimed', 'closed'].includes(newStatus)) return
+    
+    changeStatus(post.id, newStatus, user)
+    showToast(`Status changed to ${newStatus}.`)
+  }
+
   const handleToggleWatch = () => {
     if (!user) {
       showToast('Please register to use watchlist.', 'error')
@@ -122,10 +155,34 @@ export default function BountyDetail() {
 
   const handleCommentSubmit = (e) => {
     e.preventDefault()
-    if (!commentText.trim()) return
-    addComment(post.id, commentText, user)
+    const content = commentText.trim()
+    if (!content) return
+    addComment(post.id, content, user)
     setCommentText('')
     showToast('Comment posted.')
+  }
+
+  const handleCommentEditStart = (comment) => {
+    setEditCommentId(comment.id)
+    setEditCommentText(comment.text || '')
+  }
+
+  const handleCommentEditSave = (comment) => {
+    const content = editCommentText.trim()
+    if (!content) return
+    const ok = updateComment(post.id, comment.id, content, user)
+    if (!ok) {
+      showToast('Only the comment author can edit this comment.', 'error')
+      return
+    }
+    setEditCommentId(null)
+    setEditCommentText('')
+    showToast('Comment updated.')
+  }
+
+  const handleCommentEditCancel = () => {
+    setEditCommentId(null)
+    setEditCommentText('')
   }
 
   return (
@@ -173,7 +230,9 @@ export default function BountyDetail() {
               <button
                 type="button"
                 onClick={handleToggleWatch}
-                className="text-xl leading-none"
+                className={`text-xl leading-none ${
+                  isWatched ? 'text-red-500' : 'text-gray-500'
+                }`}
               >
                 {isWatched ? '★' : '☆'}
               </button>
@@ -189,7 +248,7 @@ export default function BountyDetail() {
               <span className="font-semibold">Posted by: </span>
               {post.ownerName || 'Anonymous'}
               {post.ownerEmail && (
-                <span className="ml-1 text-gray-400">
+                <span className="ml-1 text-gray-500">
                   ({post.ownerEmail})
                 </span>
               )}
@@ -204,14 +263,37 @@ export default function BountyDetail() {
 
           <div className="mt-4 flex flex-wrap gap-1">
             {(post.tags || []).map((t) => (
-              <span
+              <button
                 key={t}
-                className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs"
+                onClick={() => navigate(`/?tag=${encodeURIComponent(t.toLowerCase())}`)}
+                className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs hover:bg-gray-200 cursor-pointer transition-colors"
+                title="Click to see all posts with this tag"
               >
                 #{t}
-              </span>
+              </button>
             ))}
           </div>
+
+          {/* Owner Status Selector */}
+          {isOwner && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <label className="block text-xs font-semibold text-gray-700 mb-2">
+                Change Status (Owner Only):
+              </label>
+              <select
+                value={post.status}
+                onChange={handleStatusChange}
+                className="px-3 py-2 text-xs border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="open">Open</option>
+                <option value="claimed">Claimed</option>
+                <option value="closed">Closed</option>
+              </select>
+              <p className="mt-1 text-[10px] text-gray-600">
+                Only you can change the status of your post.
+              </p>
+            </div>
+          )}
 
           {/* 状态 + 导航按钮 */}
           <div className="mt-6 flex flex-wrap gap-2 text-xs">
@@ -222,6 +304,26 @@ export default function BountyDetail() {
             >
               Back
             </button>
+
+            {isOwner && (
+              <button
+                type="button"
+                onClick={() => navigate(`/bounties/${post.id}/edit`)}
+                className="px-3 py-2 bg-white border border-gray-200 rounded text-gray-700 hover:bg-gray-50"
+              >
+                Edit post
+              </button>
+            )}
+
+            {isOwner && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded hover:bg-red-100"
+              >
+                Delete post
+              </button>
+            )}
 
             {post.status === 'open' && (
               <button
@@ -271,7 +373,7 @@ export default function BountyDetail() {
           </h3>
 
           {(post.comments || []).length === 0 && (
-            <p className="text-xs text-gray-500 mb-3">
+            <p className="text-xs text-gray-600 mb-3">
               No comments yet. Be the first to ask a question or express
               interest.
             </p>
@@ -288,14 +390,51 @@ export default function BountyDetail() {
                     {c.authorName || 'Anonymous'}
                   </span>
                   {c.createdAt && (
-                    <span className="text-gray-400">
+                    <span className="text-gray-500">
                       {new Date(c.createdAt).toLocaleString()}
                     </span>
                   )}
                 </div>
                 <p className="text-gray-700 whitespace-pre-wrap">
-                  {c.text}
+                  {editCommentId === c.id ? (
+                    <textarea
+                      className="w-full px-2 py-1 border rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      value={editCommentText}
+                      onChange={(e) => setEditCommentText(e.target.value)}
+                      rows={2}
+                    />
+                  ) : (
+                    c.text
+                  )}
                 </p>
+                {editCommentId === c.id ? (
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCommentEditSave(c)}
+                      className="px-2 py-1 text-[11px] bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCommentEditCancel}
+                      className="px-2 py-1 text-[11px] border rounded text-gray-600 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : user?.email && c.authorEmail === user.email ? (
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCommentEditStart(c)}
+                      className="px-2 py-1 text-[11px] border rounded text-gray-600 hover:bg-gray-50"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
