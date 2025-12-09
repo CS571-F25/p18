@@ -27,6 +27,8 @@ To keep the project feasible, we will build the backend with Supabase (Postgres 
 # Install dependencies
 npm install
 
+npm install leaflet react-leaflet@4.2.1
+
 # Run development server
 npm run dev
 

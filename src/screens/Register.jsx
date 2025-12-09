@@ -1,65 +1,106 @@
-// src/screens/Register.jsx
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
-import { useAuth } from '../store'
+import { useAuth, useToast } from '../store'
+
+const inputClass =
+  'w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
 
 export default function Register() {
-  const { user, register } = useAuth()
+  const { register } = useAuth()
+  const { showToast } = useToast()
   const navigate = useNavigate()
 
-  const [name, setName] = useState(user?.name || '')
-  const [email, setEmail] = useState(user?.email || '')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [errors, setErrors] = useState({})
+
+  const crumbs = [
+    { label: 'Home', path: '/' },
+    { label: 'Register' },
+  ]
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    const newErrors = {}
+
+    if (!name.trim()) newErrors.name = 'Name is required.'
+    if (!email.trim()) {
+      newErrors.email = 'Email is required.'
+    } else if (!email.includes('@')) {
+      newErrors.email = 'Please enter a valid email.'
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
+
     register(name.trim(), email.trim())
+    showToast('Registered successfully!', 'success')
     navigate('/')
   }
 
+  const errorText = (msg) =>
+    msg && (
+      <p className="mt-1 text-xs text-red-500">
+        {msg}
+      </p>
+    )
+
   return (
-    <Layout
-      crumbs={[
-        { label: 'Home', path: '/' },
-        { label: 'Register' },
-      ]}
-    >
-      <div className="bg-white rounded-lg shadow-sm p-6 max-w-md">
-        <h1 className="text-2xl font-bold mb-4">Register</h1>
-        <p className="text-sm text-gray-600 mb-4">
-          Simple prototype registration. We only store a display name and
-          optional email in local storage so your posts feel more personal.
+    <Layout crumbs={crumbs}>
+      <div className="max-w-md mx-auto bg-white rounded-lg shadow-sm p-6">
+        <h2 className="text-xl font-semibold mb-4">
+          Register
+        </h2>
+        <p className="text-xs text-gray-600 mb-4">
+          This is a lightweight demo registration used only on the client
+          side to attach posts and actions to your name.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Name
+            </label>
             <input
-              className="w-full px-3 py-2 border rounded text-sm"
+              className={`${inputClass} ${
+                errors.name ? 'border-red-500' : ''
+              }`}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Alex"
-              required
             />
+            {errorText(errors.name)}
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Email
+            </label>
             <input
-              type="email"
-              className="w-full px-3 py-2 border rounded text-sm"
+              className={`${inputClass} ${
+                errors.email ? 'border-red-500' : ''
+              }`}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Optional, e.g. netid@wisc.edu"
             />
+            {errorText(errors.email)}
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="px-3 py-2 text-xs border rounded text-gray-600 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+              className="px-4 py-2 text-xs font-semibold bg-blue-600 text-white rounded hover:bg-blue-700"
             >
-              Save
+              Register
             </button>
           </div>
         </form>

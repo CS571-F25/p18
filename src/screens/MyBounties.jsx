@@ -1,95 +1,167 @@
-// src/screens/MyBounties.jsx
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
-import { usePostsStore, getStatusColor } from '../store'
+import {
+  usePostsStore,
+  useAuth,
+  getBadgeColor,
+  getStatusColor,
+} from '../store'
 
 export default function MyBounties() {
   const { posts } = usePostsStore()
+  const { user } = useAuth()
   const navigate = useNavigate()
+  const [tab, setTab] = useState('posted') // posted | claimed | watchlist
 
-  // prototype：先简单展示所有 bounty 帖子
-  const grouped = useMemo(() => {
-    const result = {
-      open: [],
-      claimed: [],
-      completed: [],
-      closed: [],
+  const crumbs = [
+    { label: 'Home', path: '/' },
+    { label: 'My Bounties' },
+  ]
+
+  const { posted, claimed, watchlist } = useMemo(() => {
+    if (!user) {
+      return { posted: [], claimed: [], watchlist: [] }
     }
-    posts
-      .filter((p) => p.type === 'bounty' && !p.deleted)
-      .forEach((p) => {
-        if (!result[p.status]) result[p.status] = []
-        result[p.status].push(p)
-      })
-    return result
-  }, [posts])
+    const email = user.email
+    const posted = posts.filter(
+      (p) => p.ownerEmail && p.ownerEmail === email
+    )
+    const claimed = posts.filter(
+      (p) => p.claimedByEmail && p.claimedByEmail === email
+    )
+    const watchlist = posts.filter((p) =>
+      (p.watchers || []).includes(email)
+    )
+    return { posted, claimed, watchlist }
+  }, [posts, user])
 
-  const order = ['open', 'claimed', 'completed', 'closed']
+  const currentList =
+    tab === 'posted'
+      ? posted
+      : tab === 'claimed'
+      ? claimed
+      : watchlist
+
+  if (!user) {
+    return (
+      <Layout crumbs={crumbs}>
+        <p className="text-sm text-gray-600 mb-3">
+          You are not registered yet. Register to see posts you created,
+          claimed, and saved.
+        </p>
+        <button
+          onClick={() => navigate('/register')}
+          className="px-3 py-2 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Go to Register
+        </button>
+      </Layout>
+    )
+  }
 
   return (
-    <Layout
-      crumbs={[
-        { label: 'Home', path: '/' },
-        { label: '悬赏', path: '/' },
-        { label: 'My Bounties' },
-      ]}
-    >
-      <div className="max-w-4xl">
-        <h1 className="text-2xl font-bold mb-4">My Bounties</h1>
-        <p className="text-sm text-gray-600 mb-4">
-          Prototype view of all bounty posts, grouped by status.
-        </p>
+    <Layout crumbs={crumbs}>
+      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="flex flex-wrap gap-3 text-xs">
+          <button
+            type="button"
+            onClick={() => setTab('posted')}
+            className={`px-3 py-2 rounded ${
+              tab === 'posted'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Posted by me ({posted.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('claimed')}
+            className={`px-3 py-2 rounded ${
+              tab === 'claimed'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Claimed by me ({claimed.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('watchlist')}
+            className={`px-3 py-2 rounded ${
+              tab === 'watchlist'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Watchlist ({watchlist.length})
+          </button>
+        </div>
+      </div>
 
-        {order.map((statusKey) => {
-          const list = grouped[statusKey] || []
-          if (list.length === 0) return null
-          return (
-            <div key={statusKey} className="mb-6">
-              <div className="flex items-center gap-2 mb-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {currentList.map((post) => (
+          <div
+            key={post.id}
+            className="bg-white rounded-lg shadow-sm p-4 flex flex-col cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => navigate(`/bounties/${post.id}`)}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex gap-2 items-center">
                 <span
-                  className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
-                    statusKey
+                  className={`px-2 py-1 rounded text-xs font-medium ${getBadgeColor(
+                    post.type
                   )}`}
                 >
-                  {statusKey.toUpperCase()}
+                  {post.type.toUpperCase()}
                 </span>
-                <span className="text-xs text-gray-500">
-                  {list.length} bounties
+                <span
+                  className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
+                    post.status
+                  )}`}
+                >
+                  {post.status.toUpperCase()}
                 </span>
               </div>
-
-              <div className="bg-white rounded-lg shadow-sm divide-y">
-                {list.map((post) => (
-                  <div
-                    key={post.id}
-                    className="px-4 py-3 flex items-center justify-between hover:bg-gray-50 cursor-pointer"
-                    onClick={() => navigate(`/bounties/${post.id}`)}
-                  >
-                    <div>
-                      <div className="text-sm font-medium">{post.title}</div>
-                      <div className="text-xs text-gray-500">
-                        {post.location}
-                      </div>
-                    </div>
-                    {post.price !== undefined && (
-                      <div className="text-sm font-semibold">
-                        ${post.price}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              {post.type === 'sale' || post.type === 'free' ? (
+                <span className="text-lg font-semibold text-gray-900">
+                  {post.price ? `$${post.price}` : 'Free'}
+                </span>
+              ) : post.reward ? (
+                <span className="text-lg font-semibold text-gray-900">
+                  ${post.reward}
+                </span>
+              ) : null}
             </div>
-          )
-        })}
 
-        {order.every((k) => (grouped[k] || []).length === 0) && (
-          <p className="text-sm text-gray-500">
-            No bounty posts yet. Try creating one from the “New Post” button.
-          </p>
-        )}
+            <h2 className="text-lg font-semibold mb-1">
+              {post.title}
+            </h2>
+            <p className="text-sm text-gray-700 mb-2 line-clamp-3">
+              {post.description}
+            </p>
+
+            <div className="mt-auto text-xs text-gray-500">
+              {post.location}
+            </div>
+          </div>
+        ))}
       </div>
+
+      {currentList.length === 0 && (
+        <div className="text-center py-10 text-gray-500 text-sm">
+          {tab === 'posted' && (
+            <p>You haven&apos;t posted anything yet.</p>
+          )}
+          {tab === 'claimed' && (
+            <p>You haven&apos;t claimed any tasks yet.</p>
+          )}
+          {tab === 'watchlist' && (
+            <p>Your watchlist is empty.</p>
+          )}
+        </div>
+      )}
     </Layout>
   )
 }

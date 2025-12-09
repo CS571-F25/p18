@@ -1,184 +1,241 @@
-// src/screens/NewBounty.jsx
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
-import { usePostsStore } from '../store'
+import { usePostsStore, useAuth, useToast } from '../store'
+
+const inputClass =
+  'w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
 
 export default function NewBounty() {
-  const { posts, setPosts } = usePostsStore()
   const navigate = useNavigate()
+  const { createPost } = usePostsStore()
+  const { user } = useAuth()
+  const { showToast } = useToast()
 
   const [title, setTitle] = useState('')
   const [type, setType] = useState('bounty')
-  const [price, setPrice] = useState('')
-  const [description, setDescription] = useState('')
+  const [priceOrReward, setPriceOrReward] = useState('')
   const [location, setLocation] = useState('')
+  const [lat, setLat] = useState('')
+  const [lng, setLng] = useState('')
+  const [description, setDescription] = useState('')
   const [tagsInput, setTagsInput] = useState('')
-  const [imageUrls, setImageUrls] = useState('')
-  const [error, setError] = useState('')
+
+  const crumbs = [
+    { label: 'Home', path: '/' },
+    { label: 'New Post' },
+  ]
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    setError('')
 
-    if (!title.trim() || !description.trim()) {
-      setError('Title and description are required.')
+    if (!title.trim()) {
+      showToast('Title cannot be empty.', 'error')
+      return
+    }
+    if (!description.trim()) {
+      showToast('Description cannot be empty.', 'error')
+      return
+    }
+    if (!location.trim()) {
+      showToast('Location name is required.', 'error')
       return
     }
 
-    if (type === 'bounty' && price !== '') {
-      const n = Number(price)
-      if (Number.isNaN(n) || n < 0) {
-        setError('Reward must be a non-negative number.')
-        return
-      }
+    const tags =
+      tagsInput
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean) || []
+
+    const latNum = lat.trim() ? Number(lat) : null
+    const lngNum = lng.trim() ? Number(lng) : null
+
+    if (lat.trim() && Number.isNaN(latNum)) {
+      showToast('Latitude must be a number.', 'error')
+      return
+    }
+    if (lng.trim() && Number.isNaN(lngNum)) {
+      showToast('Longitude must be a number.', 'error')
+      return
     }
 
-    const nextId = posts.length ? Math.max(...posts.map((p) => p.id)) + 1 : 1
-    const tags = tagsInput
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean)
-    const images = imageUrls
-      .split(',')
-      .map((u) => u.trim())
-      .filter(Boolean)
-
-    const newPost = {
-      id: nextId,
+    const payload = {
       title: title.trim(),
       type,
-      price: price === '' ? undefined : Number(price),
-      description: description.trim(),
       status: 'open',
+      price:
+        type === 'sale' || type === 'free'
+          ? Number(priceOrReward) || 0
+          : null,
+      reward:
+        type === 'bounty'
+          ? Number(priceOrReward) || 0
+          : null,
+      description: description.trim(),
+      location: location.trim(), // 地点名称（和地图搜索对应）
+      lat: latNum,
+      lng: lngNum,
       tags,
-      location: location.trim(),
-      images,
-      comments: [],
     }
 
-    setPosts([...posts, newPost])
-    navigate(`/bounties/${nextId}`)
+    const id = createPost(payload, user)
+    showToast('Post created!', 'success')
+    navigate(`/bounties/${id}`)
   }
 
   return (
-    <Layout
-      crumbs={[
-        { label: 'Home', path: '/' },
-        { label: '悬赏', path: '/' },
-        { label: 'New Bounty' },
-      ]}
-    >
-      <div className="bg-white rounded-lg shadow-sm p-6 max-w-3xl">
-        <h1 className="text-2xl font-bold mb-4">Create a New Bounty</h1>
+    <Layout crumbs={crumbs}>
+      <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-sm p-6">
+        <h1 className="text-xl font-semibold mb-4">
+          Create a new post
+        </h1>
 
-        {error && (
-          <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded">
-            {error}
-          </div>
+        {!user && (
+          <p className="mb-4 text-xs text-yellow-800 bg-yellow-50 border border-yellow-200 rounded px-3 py-2">
+            You are not registered yet. You can still post anonymously, but
+            registering will attach posts to your name.
+          </p>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-sm font-medium mb-1">Title</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Title
+            </label>
             <input
-              className="w-full px-3 py-2 border rounded text-sm"
+              className={inputClass}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Need help moving boxes"
-              required
+              placeholder="What do you need or what are you offering?"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Type</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Type
+              </label>
               <select
-                className="w-full px-3 py-2 border rounded text-sm"
+                className={inputClass}
                 value={type}
                 onChange={(e) => setType(e.target.value)}
               >
-                <option value="bounty">Bounty</option>
-                <option value="sale">Sale</option>
-                <option value="free">Free</option>
-                <option value="activity">Activity</option>
+                <option value="bounty">Bounty (help needed)</option>
+                <option value="sale">Secondhand sale</option>
+                <option value="free">Free item</option>
+                <option value="activity">Activity / Find a buddy</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Reward / Price
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                {type === 'sale'
+                  ? 'Price ($)'
+                  : type === 'bounty'
+                  ? 'Reward ($)'
+                  : 'Price / reward (optional)'}
               </label>
               <input
                 type="number"
                 min="0"
-                className="w-full px-3 py-2 border rounded text-sm"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder={
-                  type === 'free' || type === 'activity'
-                    ? 'N/A for this type'
-                    : '$'
-                }
+                step="1"
+                className={inputClass}
+                value={priceOrReward}
+                onChange={(e) => setPriceOrReward(e.target.value)}
               />
             </div>
+          </div>
 
+          {/* 地点名称 */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Location name (dorm / apartment / place)
+            </label>
+            <input
+              className={inputClass}
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="e.g. Lucky, The James, Lakeshore Dorms"
+            />
+            <p className="mt-1 text-[11px] text-gray-500">
+              This name will appear on the card and in map search.
+            </p>
+          </div>
+
+          {/* 经纬度（可选） */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Location
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Latitude (optional)
               </label>
               <input
-                className="w-full px-3 py-2 border rounded text-sm"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. Downtown"
+                className={inputClass}
+                value={lat}
+                onChange={(e) => setLat(e.target.value)}
+                placeholder="e.g. 43.0735"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Longitude (optional)
+              </label>
+              <input
+                className={inputClass}
+                value={lng}
+                onChange={(e) => setLng(e.target.value)}
+                placeholder="-89.399"
               />
             </div>
           </div>
+          <p className="text-[11px] text-gray-500">
+            If you fill latitude and longitude, this post will appear as a
+            pin on the map and can be sorted by distance. You can copy
+            coordinates from Google Maps.
+          </p>
 
+          {/* Tags + 提示 */}
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Description
-            </label>
-            <textarea
-              className="w-full px-3 py-2 border rounded text-sm"
-              rows={4}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe what you need help with, estimated time, any tools required..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-xs font-medium text-gray-600 mb-1">
               Tags (comma separated)
             </label>
             <input
-              className="w-full px-3 py-2 border rounded text-sm"
+              className={inputClass}
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
-              placeholder="moving, heavy, car-needed"
+              placeholder='e.g. furniture, moving, "Lakeshore Dorms"'
             />
+            <p className="mt-1 text-[11px] text-gray-500">
+              If you add a tag for the location, please type the place name
+              exactly as it appears on the map（和地图上的地名保持一致）.
+            </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Image URLs (optional, comma separated)
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Description
             </label>
-            <input
-              className="w-full px-3 py-2 border rounded text-sm"
-              value={imageUrls}
-              onChange={(e) => setImageUrls(e.target.value)}
-              placeholder="https://..., https://..."
+            <textarea
+              className={`${inputClass} min-h-[120px]`}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Add important details: time, size, pickup instructions, etc."
             />
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="px-4 py-2 text-sm rounded-md border border-gray-200 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+              className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
             >
-              Publish Bounty
+              Publish
             </button>
           </div>
         </form>

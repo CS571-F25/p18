@@ -1,201 +1,324 @@
-// src/screens/BountyDetail.jsx
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Layout from '../components/Layout'
 import {
   usePostsStore,
+  useAuth,
+  useToast,
   getBadgeColor,
   getStatusColor,
 } from '../store'
 
 export default function BountyDetail() {
-  const { posts, setPosts } = usePostsStore()
   const { id } = useParams()
   const navigate = useNavigate()
+  const { posts, isLoading, changeStatus, toggleWatchlist, addComment } =
+    usePostsStore()
+  const { user } = useAuth()
+  const { showToast } = useToast()
+
   const post = posts.find((p) => String(p.id) === String(id))
+  const [commentText, setCommentText] = useState('')
 
-  const [comment, setComment] = useState('')
-  const [imageIndex, setImageIndex] = useState(0)
+  const crumbs = [
+    { label: 'Home', path: '/' },
+    { label: 'Bounties', path: '/' },
+    { label: post ? post.title : 'Loading...' },
+  ]
 
-  if (!post || post.deleted) {
+  if (isLoading) {
     return (
-      <Layout
-        crumbs={[
-          { label: 'Home', path: '/' },
-          { label: '悬赏', path: '/' },
-          { label: 'Post not found' },
-        ]}
-      >
-        <p className="text-gray-700">Post not found or has been removed.</p>
+      <Layout crumbs={crumbs}>
+        <p className="text-gray-500 text-sm">Loading post…</p>
       </Layout>
     )
   }
 
-  const addComment = () => {
-    if (!comment.trim()) return
-    const next = posts.map((p) =>
-      p.id === post.id
-        ? {
-            ...p,
-            comments: [
-              ...(p.comments || []),
-              { id: Date.now(), text: comment.trim() },
-            ],
-          }
-        : p
+  if (!post) {
+    return (
+      <Layout crumbs={crumbs}>
+        <p className="text-gray-500 text-sm">
+          Post not found.
+        </p>
+        <button
+          onClick={() => navigate('/')}
+          className="mt-3 px-3 py-2 text-xs border rounded text-gray-600 hover:bg-gray-50"
+        >
+          Back to feed
+        </button>
+      </Layout>
     )
-    setPosts(next)
-    setComment('')
   }
 
-  const changeStatus = (nextStatus) => {
-    const next = posts.map((p) =>
-      p.id === post.id ? { ...p, status: nextStatus } : p
-    )
-    setPosts(next)
+  const isOwner =
+    user && post.ownerEmail && post.ownerEmail === user.email
+  const hasClaimed =
+    user && post.claimedByEmail && post.claimedByEmail === user.email
+
+  const isWatched =
+    user && (post.watchers || []).includes(user.email)
+
+  const handleClaim = () => {
+    if (!user) {
+      showToast('Please register or sign in to claim.', 'error')
+      return
+    }
+    if (post.status !== 'open') return
+    changeStatus(post.id, 'claimed', user)
+    showToast('You have claimed this task.')
   }
 
-  const softDelete = () => {
-    const next = posts.map((p) =>
-      p.id === post.id ? { ...p, deleted: true, status: 'closed' } : p
-    )
-    setPosts(next)
-    navigate('/')
+  const handleComplete = () => {
+    if (!(isOwner || hasClaimed)) return
+    if (post.status !== 'claimed') return
+    changeStatus(post.id, 'completed', user)
+    showToast('Marked as completed.')
   }
 
-  const images = post.images || []
-  const canPrev = imageIndex > 0
-  const canNext = imageIndex < images.length - 1
+  const handleClose = () => {
+    if (!isOwner) return
+    if (post.status !== 'completed') return
+    changeStatus(post.id, 'closed', user)
+    showToast('Post closed.')
+  }
+
+  const handleToggleWatch = () => {
+    if (!user) {
+      showToast('Please register to use watchlist.', 'error')
+      return
+    }
+    toggleWatchlist(post.id, user)
+    showToast('Updated watchlist.', 'success')
+  }
+
+  // ⭐ 导航逻辑：优先用经纬度，没有就用 location 名字
+  const handleNavigate = () => {
+    // 1) 优先用经纬度
+    if (typeof post.lat === 'number' && typeof post.lng === 'number') {
+      const destination = `${post.lat},${post.lng}`
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+        destination
+      )}&travelmode=walking`
+      window.open(url, '_blank')
+      return
+    }
+
+    // 2) 没有经纬度，但有地名，直接交给 Google Maps 搜
+    if (post.location && post.location.trim()) {
+      const query = `${post.location.trim()}, Madison, WI`
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+        query
+      )}&travelmode=walking`
+      window.open(url, '_blank')
+      return
+    }
+
+    // 3) 两个都没有
+    showToast(
+      'This post does not have a location yet. Please add a location name or coordinates when creating the post.',
+      'error'
+    )
+  }
+
+  const handleCommentSubmit = (e) => {
+    e.preventDefault()
+    if (!commentText.trim()) return
+    addComment(post.id, commentText, user)
+    setCommentText('')
+    showToast('Comment posted.')
+  }
 
   return (
-    <Layout
-      crumbs={[
-        { label: 'Home', path: '/' },
-        { label: '悬赏', path: '/' },
-        { label: post.title },
-      ]}
-    >
-      <div className="bg-white rounded-lg shadow-sm p-6 max-w-3xl">
-        {images.length > 0 && (
-          <div className="mb-4">
-            <div className="aspect-[4/3] rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
-              <img
-                src={images[imageIndex]}
-                alt={post.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            {images.length > 1 && (
-              <div className="flex items-center justify-between mt-2 text-xs">
-                <button
-                  onClick={() => canPrev && setImageIndex(imageIndex - 1)}
-                  disabled={!canPrev}
-                  className="px-2 py-1 border rounded disabled:opacity-40"
+    <Layout crumbs={crumbs}>
+      <div className="max-w-3xl mx-auto space-y-6">
+        {/* 主内容卡片 */}
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  className={`px-2 py-1 rounded text-xs font-medium ${getBadgeColor(
+                    post.type
+                  )}`}
                 >
-                  Prev
-                </button>
-                <span>
-                  {imageIndex + 1} / {images.length}
+                  {post.type.toUpperCase()}
                 </span>
-                <button
-                  onClick={() => canNext && setImageIndex(imageIndex + 1)}
-                  disabled={!canNext}
-                  className="px-2 py-1 border rounded disabled:opacity-40"
+                <span
+                  className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
+                    post.status
+                  )}`}
                 >
-                  Next
-                </button>
+                  {post.status.toUpperCase()}
+                </span>
+              </div>
+              <h2 className="text-xl font-semibold mb-1">
+                {post.title}
+              </h2>
+              <p className="text-sm text-gray-600">
+                {post.location}
+              </p>
+            </div>
+
+            <div className="text-right flex flex-col items-end gap-2">
+              {post.type === 'sale' || post.type === 'free' ? (
+                <div className="text-2xl font-semibold text-gray-900">
+                  {post.price ? `$${post.price}` : 'Free'}
+                </div>
+              ) : post.reward ? (
+                <div className="text-2xl font-semibold text-gray-900">
+                  ${post.reward}
+                </div>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={handleToggleWatch}
+                className="text-xl leading-none"
+              >
+                {isWatched ? '★' : '☆'}
+              </button>
+            </div>
+          </div>
+
+          <p className="mt-4 text-sm text-gray-800 whitespace-pre-wrap">
+            {post.description}
+          </p>
+
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-gray-600">
+            <div>
+              <span className="font-semibold">Posted by: </span>
+              {post.ownerName || 'Anonymous'}
+              {post.ownerEmail && (
+                <span className="ml-1 text-gray-400">
+                  ({post.ownerEmail})
+                </span>
+              )}
+            </div>
+            {post.claimedByName && (
+              <div>
+                <span className="font-semibold">Claimed by: </span>
+                {post.claimedByName}
               </div>
             )}
           </div>
-        )}
 
-        <div className="flex gap-2 mb-2">
-          <span
-            className={`px-2 py-1 rounded text-xs font-medium ${getBadgeColor(
-              post.type
-            )}`}
-          >
-            {post.type.toUpperCase()}
-          </span>
-          <span
-            className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
-              post.status
-            )}`}
-          >
-            {post.status.toUpperCase()}
-          </span>
-        </div>
+          <div className="mt-4 flex flex-wrap gap-1">
+            {(post.tags || []).map((t) => (
+              <span
+                key={t}
+                className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs"
+              >
+                #{t}
+              </span>
+            ))}
+          </div>
 
-        <h1 className="text-2xl font-bold mb-1">{post.title}</h1>
-        {post.price !== undefined && (
-          <p className="text-2xl font-bold mb-2">${post.price}</p>
-        )}
-
-        <p className="text-gray-700 my-3">{post.description}</p>
-
-        <div className="flex flex-wrap gap-2 mb-2">
-          {(post.tags || []).map((t) => (
-            <span
-              key={t}
-              className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs"
-            >
-              #{t}
-            </span>
-          ))}
-        </div>
-
-        <p className="text-sm text-gray-500 mb-4">{post.location}</p>
-
-        <div className="flex flex-wrap gap-2 mb-6">
-          {['open', 'claimed', 'completed', 'closed'].map((s) => (
+          {/* 状态 + 导航按钮 */}
+          <div className="mt-6 flex flex-wrap gap-2 text-xs">
             <button
-              key={s}
-              onClick={() => changeStatus(s)}
-              className={`px-3 py-2 rounded text-xs border ${
-                post.status === s
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-gray-100 text-gray-700 border-gray-200'
-              }`}
+              type="button"
+              onClick={() => navigate(-1)}
+              className="px-3 py-2 border rounded text-gray-600 hover:bg-gray-50"
             >
-              {s}
+              Back
             </button>
-          ))}
-          <button
-            onClick={softDelete}
-            className="px-3 py-2 rounded text-xs bg-red-50 text-red-700 border border-red-200 ml-auto"
-          >
-            Soft delete
-          </button>
-        </div>
 
-        <h2 className="text-xl font-semibold mb-2">Questions &amp; Comments</h2>
-        <div className="space-y-2 mb-3">
-          {(post.comments || []).map((c) => (
-            <div
-              key={c.id}
-              className="px-3 py-2 rounded bg-gray-50 text-sm text-gray-800"
+            {post.status === 'open' && (
+              <button
+                type="button"
+                onClick={handleClaim}
+                className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Claim task
+              </button>
+            )}
+
+            {post.status === 'claimed' && (isOwner || hasClaimed) && (
+              <button
+                type="button"
+                onClick={handleComplete}
+                className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                Mark as completed
+              </button>
+            )}
+
+            {post.status === 'completed' && isOwner && (
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-3 py-2 bg-gray-800 text-white rounded hover:bg-gray-900"
+              >
+                Close post
+              </button>
+            )}
+
+            {/* ⭐ Take me there 按钮 */}
+            <button
+              type="button"
+              onClick={handleNavigate}
+              className="px-3 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700"
             >
-              {c.text}
-            </div>
-          ))}
-          {(!post.comments || post.comments.length === 0) && (
-            <p className="text-sm text-gray-500">No comments yet.</p>
-          )}
+              Take me there
+            </button>
+          </div>
         </div>
 
-        <div className="flex gap-2">
-          <input
-            className="flex-1 px-3 py-2 border rounded text-sm"
-            placeholder="Ask a question or express interest..."
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-          />
-          <button
-            onClick={addComment}
-            className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+        {/* 评论区 */}
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h3 className="text-sm font-semibold mb-3">
+            Comments
+          </h3>
+
+          {(post.comments || []).length === 0 && (
+            <p className="text-xs text-gray-500 mb-3">
+              No comments yet. Be the first to ask a question or express
+              interest.
+            </p>
+          )}
+
+          <div className="space-y-3 mb-4">
+            {(post.comments || []).map((c) => (
+              <div
+                key={c.id}
+                className="border border-gray-100 rounded p-2 text-xs"
+              >
+                <div className="flex justify-between mb-1">
+                  <span className="font-semibold">
+                    {c.authorName || 'Anonymous'}
+                  </span>
+                  {c.createdAt && (
+                    <span className="text-gray-400">
+                      {new Date(c.createdAt).toLocaleString()}
+                    </span>
+                  )}
+                </div>
+                <p className="text-gray-700 whitespace-pre-wrap">
+                  {c.text}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <form
+            className="space-y-2"
+            onSubmit={handleCommentSubmit}
           >
-            Post
-          </button>
+            <textarea
+              className="w-full px-3 py-2 border rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Ask a question or leave a comment…"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+            />
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className="px-3 py-2 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Post comment
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </Layout>
