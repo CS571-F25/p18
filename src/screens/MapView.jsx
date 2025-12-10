@@ -1,9 +1,20 @@
 import { useMemo, useState, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
+import markerIcon from 'leaflet/dist/images/marker-icon.png'
+import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { usePostsStore } from '../store'
+
+// Fix missing marker assets in Vite/React builds so Leaflet doesn't show "?"
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+})
 
 export default function MapView() {
   const { posts, isLoading } = usePostsStore()
@@ -24,16 +35,14 @@ export default function MapView() {
 
   // 只取有坐标的帖子
   const postsWithCoords = useMemo(() => {
-    const filtered = posts.filter(
-      (p) =>
-        p.lat != null &&
-        p.lng != null &&
-        typeof p.lat === 'number' &&
-        typeof p.lng === 'number' &&
-        !Number.isNaN(p.lat) &&
-        !Number.isNaN(p.lng)
-    )
-    return filtered
+    return posts
+      .map((p) => {
+        const lat = Number(p.lat)
+        const lng = Number(p.lng)
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+        return { ...p, lat, lng }
+      })
+      .filter(Boolean)
   }, [posts])
 
   // 搜索过滤

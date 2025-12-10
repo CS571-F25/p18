@@ -160,6 +160,11 @@ export function PostsProvider({ children }) {
   }
 
   const createPost = (data, user) => {
+    const normalizeCoord = (val) => {
+      const n = Number(val)
+      return Number.isFinite(n) ? n : null
+    }
+
     const t = Date.now()
     const id = String(t)
     const newPost = {
@@ -172,6 +177,8 @@ export function PostsProvider({ children }) {
       ownerEmail: user?.email || '',
       // 这里 data 里可以带 lat / lng / location / 其他
       ...data,
+      lat: normalizeCoord(data.lat),
+      lng: normalizeCoord(data.lng),
     }
     setPosts((prev) => [newPost, ...prev])
     return id
