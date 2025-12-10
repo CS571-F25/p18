@@ -107,13 +107,23 @@ export function PostsProvider({ children }) {
             lat: post.lat != null && !Number.isNaN(Number(post.lat)) ? Number(post.lat) : null,
             lng: post.lng != null && !Number.isNaN(Number(post.lng)) ? Number(post.lng) : null,
           }))
-          // Only use stored posts if they're valid, otherwise use initial mock posts
-          if (normalized.length > 0) {
+
+          const hasAnyCoords = normalized.some(
+            (p) => Number.isFinite(p.lat) && Number.isFinite(p.lng)
+          )
+
+          if (normalized.length > 0 && hasAnyCoords) {
             setPosts(normalized)
           } else {
-            // If stored data is empty or invalid, use initial mock posts and save them
-            setPosts(initialMockPosts)
-            window.localStorage.setItem('madforum_posts', JSON.stringify(initialMockPosts))
+            // Reseed demo posts if stored data has no coordinates so map still works
+            const merged = [
+              ...initialMockPosts,
+              ...normalized.filter(
+                (p) => !initialMockPosts.some((demo) => demo.id === p.id)
+              ),
+            ]
+            setPosts(merged)
+            window.localStorage.setItem('madforum_posts', JSON.stringify(merged))
           }
         } else {
           // First visit: use initial mock posts and save them
