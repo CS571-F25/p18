@@ -102,11 +102,33 @@ export function PostsProvider({ children }) {
         if (stored) {
           const parsed = JSON.parse(stored)
           // Ensure lat/lng are numbers (they might be strings from localStorage)
-          const normalized = parsed.map((post) => ({
-            ...post,
-            lat: post.lat != null && !Number.isNaN(Number(post.lat)) ? Number(post.lat) : null,
-            lng: post.lng != null && !Number.isNaN(Number(post.lng)) ? Number(post.lng) : null,
-          }))
+          const mockById = Object.fromEntries(
+            initialMockPosts.map((p) => [p.id, p])
+          )
+
+          const normalized = parsed.map((post) => {
+            const latNum =
+              post.lat != null && !Number.isNaN(Number(post.lat))
+                ? Number(post.lat)
+                : null
+            const lngNum =
+              post.lng != null && !Number.isNaN(Number(post.lng))
+                ? Number(post.lng)
+                : null
+
+            // If stored post matches a demo id and is missing coords, backfill from demo
+            const demo = mockById[post.id]
+            const filledLat =
+              latNum == null && demo?.lat != null ? demo.lat : latNum
+            const filledLng =
+              lngNum == null && demo?.lng != null ? demo.lng : lngNum
+
+            return {
+              ...post,
+              lat: filledLat,
+              lng: filledLng,
+            }
+          })
 
           const hasAnyCoords = normalized.some(
             (p) => Number.isFinite(p.lat) && Number.isFinite(p.lng)
