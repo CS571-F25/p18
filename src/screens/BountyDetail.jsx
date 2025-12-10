@@ -249,7 +249,7 @@ export default function BountyDetail() {
                 type="button"
                 onClick={handleToggleWatch}
                 className={`text-xl leading-none ${
-                  isWatched ? 'text-red-500' : 'text-gray-500'
+                  isWatched ? 'text-red-600' : 'text-gray-500'
                 }`}
               >
                 {isWatched ? '★' : '☆'}

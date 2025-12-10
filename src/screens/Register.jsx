@@ -58,7 +58,7 @@ export default function Register() {
 
   const errorText = (msg) =>
     msg && (
-      <p className="mt-1 text-xs text-red-500">
+      <p className="mt-1 text-xs text-red-600">
         {msg}
       </p>
     )
