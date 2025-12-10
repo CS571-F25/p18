@@ -19,6 +19,7 @@ export default function BountyDetail() {
     toggleWatchlist,
     addComment,
     updateComment,
+    deleteComment,
     deletePost,
   } =
     usePostsStore()
@@ -183,6 +184,23 @@ export default function BountyDetail() {
   const handleCommentEditCancel = () => {
     setEditCommentId(null)
     setEditCommentText('')
+  }
+
+  const handleCommentDelete = (comment) => {
+    if (!user?.email) {
+      showToast('Please sign in to delete your comment.', 'error')
+      return
+    }
+    const ok = deleteComment(post.id, comment.id, user)
+    if (!ok) {
+      showToast('Only the comment author can delete this comment.', 'error')
+      return
+    }
+    if (editCommentId === comment.id) {
+      setEditCommentId(null)
+      setEditCommentText('')
+    }
+    showToast('Comment deleted.')
   }
 
   return (
@@ -432,6 +450,13 @@ export default function BountyDetail() {
                       className="px-2 py-1 text-[11px] border rounded text-gray-600 hover:bg-gray-50"
                     >
                       Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCommentDelete(c)}
+                      className="px-2 py-1 text-[11px] border border-red-200 text-red-600 rounded hover:bg-red-50"
+                    >
+                      Delete
                     </button>
                   </div>
                 ) : null}

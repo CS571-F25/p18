@@ -254,6 +254,25 @@ export function PostsProvider({ children }) {
     return updated
   }
 
+  const deleteComment = (id, commentId, user) => {
+    if (!user?.email) return false
+    let removed = false
+
+    updatePost(id, (post) => {
+      const comments = post.comments || []
+      const nextComments = comments.filter((c) => {
+        if (c.id !== commentId) return true
+        const isOwner = c.authorEmail && c.authorEmail === user.email
+        if (!isOwner) return true
+        removed = true
+        return false
+      })
+      return { ...post, comments: nextComments }
+    })
+
+    return removed
+  }
+
   const deletePost = (id, user) => {
     if (!user?.email) return false
     let removed = false
@@ -303,6 +322,7 @@ export function PostsProvider({ children }) {
         toggleWatchlist,
         addComment,
         updateComment,
+        deleteComment,
         updatePostFields,
         deletePost,
       }}
